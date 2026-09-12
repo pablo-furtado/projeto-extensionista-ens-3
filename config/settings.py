@@ -25,13 +25,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG_ENV = os.getenv("DEBUG", "false").lower() == "true"
+
+DEBUG = DEBUG_ENV
 
 ALLOWED_HOSTS = [
     "chorompo.duckdns.org",
-    "127.0.0.1"
+    "127.0.0.1",
+    "localhost",
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://chorompo.duckdns.org",
+]
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Application definition
 
