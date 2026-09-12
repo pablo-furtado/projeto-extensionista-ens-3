@@ -1,0 +1,70 @@
+a { color: var(--green); }
+.page-shell { max-width: 1200px; margin: 20px auto 60px; padding: 0 40px; }
+.header-actions { display: flex; align-items: center; gap: 22px; font-size: 13px; }
+.text-button { width: auto; margin: 0; padding: 8px 14px; }
+.narrow-card { max-width: 540px; margin: 45px auto; }
+.narrow-card h1, .page-heading h1, .setup-intro h1 { font-size: clamp(29px, 3vw, 40px); }
+.narrow-card > p, .setup-intro > p, .page-heading > p { color: var(--muted); line-height: 1.7; }
+.setup-layout { display: grid; grid-template-columns: .85fr 1.15fr; gap: 65px; align-items: start; }
+.setup-intro { padding-top: 28px; }
+.steps { padding-left: 22px; line-height: 2.5; color: var(--muted); }
+.steps [aria-current] { color: var(--green); }
+fieldset { border: 0; padding: 0; margin: 24px 0 0; min-width: 0; }
+legend { font-size: 16px; font-weight: 650; padding: 0; margin-bottom: 20px; }
+.field-address, .field-username, .field-password, .field-password1, .field-password2, .field-description, .field-notes, .field-starts_at, .field-patient, .field-treatment, .field-professional { grid-column: 1 / -1; }
+.field input, .field select, .field textarea { width: 100%; min-height: 47px; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font: inherit; font-size: 14px; color: var(--ink); background: #fdfefd; }
+.field input:disabled { background: #f0f3ee; color: #52645c; }
+.help-text, .optional { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.help-text { margin-top: 7px; }
+.help-text ul { padding-left: 20px; margin: 5px 0; }
+.included-modules { list-style: none; padding: 0; }
+.included-modules li { margin-bottom: 20px; padding-left: 15px; border-left: 3px solid #bdd4c4; }
+.included-modules p { color: var(--muted); font-size: 13px; line-height: 1.6; margin: 5px 0; }
+.module-nav { display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 32px; }
+.module-nav a { text-decoration: none; padding: 10px 16px; border-radius: 8px; font-size: 14px; }
+.module-nav a:hover, .module-nav [aria-current] { background: #e2eddf; }
+.page-heading { margin-bottom: 32px; }
+.page-heading h1 { margin: 14px 0; }
+.module-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; }
+.module-card { padding: 30px; border: 1px solid var(--border); border-radius: 18px; background: white; text-decoration: none; color: var(--ink); }
+.module-card:hover { border-color: var(--green); box-shadow: 0 10px 24px #173b3809; }
+.module-card h2 { font-size: 23px; }
+.module-card p { font-size: 14px; color: var(--muted); line-height: 1.7; }
+.module-icon { display: inline-grid; place-items: center; width: 42px; height: 42px; background: #e5eedf; color: var(--green); border-radius: 12px; font-size: 20px; }
+.module-link { display: block; margin-top: 24px; font-size: 13px; font-weight: 650; color: var(--green); }
+.module-layout { display: grid; grid-template-columns: 1.1fr 1fr; gap: 26px; align-items: start; }
+.module-layout .form-card { padding: 26px; min-width: 0; }
+.module-layout h2 { font-size: 22px; margin-bottom: 25px; }
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+th, td { padding: 14px 10px; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; min-width: 90px; }
+th { color: var(--muted); font-size: 12px; }
+.empty-state { text-align: center; padding: 30px 5px; }
+.empty-state h3 { font-size: 17px; }
+.empty-state p { color: var(--muted); font-size: 14px; line-height: 1.7; }
+.pagination { display: flex; justify-content: space-between; gap: 12px; padding-top: 20px; font-size: 12px; }
+.treatment-nav { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 28px; }
+.treatment-nav a { padding: 10px 15px; border: 1px solid var(--border); border-radius: 30px; text-decoration: none; font-size: 13px; }
+.treatment-nav [aria-current] { background: var(--green); color: white; border-color: var(--green); }
+.catalog-list { display: grid; gap: 18px; }
+.catalog-card h2 { margin: 12px 0 15px; }
+.clinical-text { overflow-wrap: anywhere; line-height: 1.8; font-size: 14px; margin: 16px 0; }
+.catalog-price { font-size: 25px; font-weight: 650; }
+.catalog-price span { color: var(--muted); font-size: 12px; font-weight: 400; }
+.cost-summary { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 0; padding-top: 18px; border-top: 1px solid var(--border); }
+.cost-summary dt { color: var(--muted); font-size: 11px; }
+.cost-summary dd { margin: 5px 0 0; font-size: 13px; }
+.session-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+.session-summary > div { background: white; border: 1px solid var(--border); border-radius: 13px; padding: 20px; }
+.session-summary span { display: block; color: var(--muted); font-size: 12px; margin-bottom: 10px; }
+.session-summary strong { font-size: 24px; }
+.status-badge { display: inline-block; background: #edf0e9; color: #4b6354; padding: 5px 9px; border-radius: 15px; font-size: 11px; }
+.status-completed { background: #deefdf; color: #245b38; }
+.session-heading { margin-top: 28px; }
+.evolution-entry + .evolution-entry { border-top: 1px solid var(--border); padding-top: 24px; margin-top: 24px; }
+.evolution-entry h3 { font-size: 16px; margin: 12px 0; }
+.field-session, .field-uses_session { grid-column: 1 / -1; }
+.field input[type="checkbox"] { width: 22px; min-height: 22px; height: 22px; accent-color: var(--green); }
+@media (max-width: 760px) { .session-summary { grid-template-columns: repeat(2, 1fr); } .session-summary strong { font-size: 20px; } }
+@media (max-width: 900px) { .setup-layout { gap: 30px; } .module-layout { grid-template-columns: 1fr; } .page-shell { padding: 0 24px; } }
+@media (max-width: 680px) { .setup-layout, .module-grid { grid-template-columns: 1fr; } .setup-intro { padding-top: 0; } .header-actions { gap: 10px; } .header-actions > span { display: none; } .narrow-card { margin-top: 20px; } .module-nav { gap: 4px; } .module-nav a { padding: 9px; font-size: 12px; } }

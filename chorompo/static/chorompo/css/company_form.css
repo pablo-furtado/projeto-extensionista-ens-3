@@ -1,0 +1,44 @@
+:root { color-scheme: light; --ink: #173b38; --muted: #637875; --green: #176859; --border: #d8e2de; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #f5f7f3; color: var(--ink); font-family: "Segoe UI", Arial, sans-serif; }
+.site-header { max-width: 1200px; margin: auto; padding: 32px 40px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.brand { color: var(--ink); font-size: 29px; font-weight: 750; letter-spacing: -1.2px; text-decoration: none; display: flex; align-items: center; }
+.brand-icon { display: inline-grid; place-items: center; background: var(--green); color: white; width: 36px; height: 36px; border-radius: 11px; margin-right: 10px; font-size: 30px; font-weight: 400; }
+.brand-dot { color: #75a66b; }
+.header-caption { font-size: 13px; color: var(--muted); }
+.layout { max-width: 1200px; margin: 34px auto 55px; padding: 0 40px; display: grid; grid-template-columns: 1fr 1.1fr; align-items: center; gap: 80px; }
+.intro { position: relative; padding: 20px 0; }
+.eyebrow { display: block; color: var(--green); font-size: 11px; font-weight: 750; letter-spacing: 2px; }
+h1 { font-size: clamp(32px, 3.5vw, 47px); letter-spacing: -1.8px; line-height: 1.16; font-weight: 650; margin: 22px 0; }
+.intro > p { color: var(--muted); font-size: 16px; line-height: 1.8; max-width: 405px; }
+.intro-note { display: flex; gap: 14px; align-items: center; margin-top: 34px; }
+.note-icon { display: grid; place-items: center; flex-shrink: 0; width: 43px; height: 43px; border-radius: 50%; background: #e4eddd; color: var(--green); font-size: 26px; }
+.intro-note strong { font-size: 14px; }
+.intro-note p { font-size: 12px; line-height: 1.6; color: var(--muted); margin: 5px 0 0; }
+.decoration { display: flex; align-items: center; margin-top: 48px; height: 88px; }
+.decoration span { width: 85px; height: 85px; border-radius: 50%; background: #e2eadc; }
+.decoration span:nth-child(2) { margin-left: -20px; background: #cbdcd0; border-radius: 50% 50% 12px 50%; }
+.decoration span:last-child { margin-left: -20px; background: var(--green); color: #f4f6ee; display: grid; place-items: center; font-size: 52px; font-weight: 200; border-radius: 24px; transform: rotate(-8deg); }
+.form-card { background: white; padding: 38px; border: 1px solid #e3e9e0; border-radius: 22px; box-shadow: 0 18px 60px #23473808; }
+h2 { font-size: 28px; letter-spacing: -.8px; margin: 12px 0 10px; }
+.form-description { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 0 0 27px; }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 21px 16px; }
+.field { min-width: 0; }
+.field-name, .field-email, .field-phone_number { grid-column: 1 / -1; }
+label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+.form-input { width: 100%; min-height: 47px; border: 1px solid var(--border); border-radius: 8px; background: #fdfefd; padding: 12px 13px; font: inherit; font-size: 14px; color: var(--ink); }
+.form-input::placeholder { color: #788982; opacity: 1; }
+.form-input:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid #89baaa; outline-offset: 3px; }
+button { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 27px; padding: 15px 18px; background: var(--green); border: 0; border-radius: 8px; color: white; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+button:hover { background: #105344; }
+button span { font-size: 20px; }
+.form-footnote { font-size: 11px; text-align: center; color: var(--muted); margin: 15px 0 0; line-height: 1.6; }
+.success-message, .error-summary { padding: 13px; margin-bottom: 20px; border-radius: 8px; font-size: 14px; line-height: 1.5; }
+.success-message { background: #edf6ed; color: #225b36; border: 1px solid #c8dfce; }
+.error-summary { background: #fff0ee; color: #9b302b; }
+.field-error { color: #aa302b; font-size: 12px; line-height: 1.5; }
+.field-error p { margin: 6px 0 0; }
+.has-error .form-input { border-color: #ba4941; }
+footer { padding: 20px 24px 30px; color: var(--muted); text-align: center; font-size: 12px; line-height: 1.6; }
+@media (max-width: 850px) { .layout { gap: 36px; padding: 0 24px; } .site-header { padding: 25px 24px; } .form-card { padding: 26px; } }
+@media (max-width: 680px) { .layout { grid-template-columns: 1fr; margin-top: 10px; gap: 25px; max-width: 520px; } .intro { padding: 0; } h1 { font-size: 34px; } .intro-note, .decoration { display: none; } .intro > p { margin-bottom: 0; } .header-caption { font-size: 11px; } .brand { font-size: 25px; } .fields { grid-template-columns: 1fr; } .form-card { padding: 25px 20px; } h2 { font-size: 25px; } }

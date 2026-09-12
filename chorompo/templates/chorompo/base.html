@@ -1,0 +1,33 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Chorompo{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'chorompo/css/company_form.css' %}">
+    <link rel="stylesheet" href="{% static 'chorompo/css/platform.css' %}">
+</head>
+<body>
+    <header class="site-header">
+        <a class="brand" href="{% url 'chorompo:dashboard' %}"><span class="brand-icon" aria-hidden="true">+</span> chorompo<span class="brand-dot">.</span></a>
+        <div class="header-actions">
+            {% if user.is_authenticated %}
+                <span>{{ user.get_short_name|default:user.username }}</span>
+                <form method="post" action="{% url 'chorompo:logout' %}">{% csrf_token %}<button class="text-button" type="submit">Sair</button></form>
+            {% else %}<a href="{% url 'chorompo:login' %}">Já tenho conta</a>{% endif %}
+        </div>
+    </header>
+    <main class="page-shell">
+        {% if modules and company.onboarding_completed %}
+            <nav class="module-nav" aria-label="Módulos da clínica">
+                <a href="{% url 'chorompo:dashboard' %}">Visão geral</a>
+                {% for module in modules %}<a href="{% url module.url %}" {% if active_module == module.key %}aria-current="page"{% endif %}>{{ module.title }}</a>{% endfor %}
+            </nav>
+        {% endif %}
+        {% for message in messages %}<div class="{% if message.tags == 'error' %}error-summary{% else %}success-message{% endif %}" role="status">{{ message }}</div>{% endfor %}
+        {% block content %}{% endblock %}
+    </main>
+    <footer>Chorompo · Cuidar da gestão também é cuidar de pessoas.</footer>
+</body>
+</html>

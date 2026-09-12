@@ -1,0 +1,17 @@
+{% extends 'chorompo/base.html' %}
+{% block title %}Sessão {{ session.session_number }} | Chorompo{% endblock %}
+{% block content %}
+{% include 'chorompo/treatments/nav.html' %}
+<a href="{% url 'chorompo:treatment_detail' session.treatment_id %}">← Todas as sessões deste tratamento</a>
+<section class="page-heading session-heading"><span class="eyebrow">{{ session.treatment.patient.name }} · {{ session.treatment.name }}</span><h1>Sessão {{ session.session_number }} de {{ session.treatment.qty_sessions }}</h1><p>{% if session.session_held %}Realizada em {{ session.date|date:"d/m/Y" }}. Novas evoluções complementam o histórico e não consomem saldo.{% else %}Registre a evolução e marque a realização quando o atendimento acontecer.{% endif %}</p></section>
+<div class="module-layout">
+    <section class="form-card">
+        <h2>Histórico de evoluções</h2>
+        {% for evolution in page_obj %}
+        <article class="evolution-entry"><span class="eyebrow">{{ evolution.date|date:"d/m/Y" }}</span><h3>{{ evolution.employee.name }}</h3><span class="status-badge {% if evolution.uses_session %}status-completed{% endif %}">{% if evolution.uses_session %}Realização registrada{% else %}Evolução sem consumo{% endif %}</span><div class="clinical-text">{{ evolution.notes|linebreaksbr }}</div><p class="help-text">Registrado em {{ evolution.created_at|date:"d/m/Y H:i" }}</p></article>
+        {% empty %}<div class="empty-state"><h3>A história desta sessão começa aqui</h3><p>As evoluções ficarão registradas com a data e o profissional responsável.</p></div>{% endfor %}
+        {% include 'chorompo/includes/pagination.html' %}
+    </section>
+    <section class="form-card"><h2>Registrar evolução</h2><p class="form-description">O registro será atribuído ao seu perfil de profissional.</p><form method="post" novalidate>{% csrf_token %}{% include 'chorompo/includes/fields.html' %}<button type="submit">Salvar evolução <span aria-hidden="true">→</span></button></form></section>
+</div>
+{% endblock %}

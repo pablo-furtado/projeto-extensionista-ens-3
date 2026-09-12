@@ -1,0 +1,21 @@
+{% extends 'chorompo/base.html' %}
+{% block title %}Sessões de {{ treatment.patient.name }} | Chorompo{% endblock %}
+{% block content %}
+{% include 'chorompo/treatments/nav.html' %}
+<section class="page-heading"><span class="eyebrow">AQUISIÇÃO #{{ treatment.pk }} · {{ treatment.patient.name }}</span><h1>{{ treatment.name }}</h1><p>{{ treatment.description }}</p></section>
+<div class="session-summary">
+    <div><span>Compradas</span><strong>{{ treatment.qty_sessions }}</strong></div>
+    <div><span>Realizadas</span><strong>{{ treatment.used_count }}</strong></div>
+    <div><span>Disponíveis</span><strong>{{ remaining }}</strong></div>
+    <div><span>Valor da aquisição</span><strong>R$ {{ treatment.price|floatformat:2 }}</strong></div>
+</div>
+<p class="form-description">Adquirido em {{ treatment.created_at|date:"d/m/Y" }} · Desconto de {{ treatment.discount_percentage|floatformat:2 }}% · {% if not treatment.is_active %}Inativo{% elif remaining == 0 %}Todas as sessões realizadas{% else %}Em acompanhamento{% endif %}</p>
+<section class="form-card">
+    <h2>Sessões do tratamento</h2>
+    <div class="table-scroll"><table><thead><tr><th>Sessão</th><th>Situação</th><th>Data</th><th>Evoluções</th><th>Acompanhamento</th></tr></thead><tbody>
+        {% for session in page_obj %}<tr><td>{{ session.session_number }} de {{ treatment.qty_sessions }}</td><td><span class="status-badge {% if session.session_held %}status-completed{% endif %}">{% if session.session_held %}Realizada{% elif session.appointment %}Agendada{% else %}Disponível{% endif %}</span></td><td>{% if session.date %}{{ session.date|date:"d/m/Y" }}{% elif session.appointment %}{{ session.appointment.starts_at|date:"d/m/Y H:i" }}{% else %}—{% endif %}</td><td>{{ session.evolution_count }}</td><td><a href="{% url 'chorompo:session_detail' session.pk %}">Abrir sessão</a></td></tr>{% endfor %}
+    </tbody></table></div>
+    {% include 'chorompo/includes/pagination.html' %}
+</section>
+<p class="form-footnote">Agendar não consome o saldo. A sessão é utilizada ao registrar sua realização em uma evolução.</p>
+{% endblock %}

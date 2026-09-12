@@ -1,0 +1,10 @@
+{% extends 'chorompo/base.html' %}
+{% block title %}Sua clínica | Chorompo{% endblock %}
+{% block content %}
+<section class="page-heading"><span class="eyebrow">{{ company.name }}</span><h1>Seu espaço para cuidar da gestão.</h1><p>Escolha um módulo para começar o dia.</p></section>
+<div class="module-grid">
+    {% for module in modules %}
+        <a class="module-card" href="{% url module.url %}"><span class="module-icon" aria-hidden="true">{{ module.icon }}</span><h2>{{ module.title }}</h2><p>{{ module.description }}</p><span class="module-link">Acessar módulo →</span></a>
+    {% empty %}<p>Seu perfil ainda não tem módulos disponíveis. Entre em contato com o administrador da clínica.</p>{% endfor %}
+</div>
+{% endblock %}

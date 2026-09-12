@@ -1,0 +1,11 @@
+{% extends 'chorompo/base.html' %}
+{% block title %}Confirme seu e-mail | Chorompo{% endblock %}
+{% block content %}
+<section class="form-card narrow-card">
+    <span class="eyebrow">CONTINUE SEU CADASTRO</span>
+    <h1>Confira seu e-mail</h1>
+    <p>Enviamos um link para o e-mail cadastrado na clínica. Abra o link para criar o perfil do administrador.</p>
+    <p class="form-description">O link vale por uma hora. Confira também a pasta de spam.</p>
+    <a href="{% url 'chorompo:registration_start' %}">Voltar ao cadastro</a>
+</section>
+{% endblock %}

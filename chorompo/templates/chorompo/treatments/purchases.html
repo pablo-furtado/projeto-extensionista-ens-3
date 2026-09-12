@@ -1,0 +1,20 @@
+{% extends 'chorompo/base.html' %}
+{% block title %}Tratamentos dos pacientes | Chorompo{% endblock %}
+{% block content %}
+<section class="page-heading"><span class="eyebrow">{{ company.name }} · TRATAMENTOS</span><h1>Cada paciente, seu plano de cuidado.</h1><p>Vincule o tratamento adquirido ao paciente e acompanhe as sessões compradas, utilizadas e disponíveis.</p></section>
+{% include 'chorompo/treatments/nav.html' %}
+<div class="module-layout">
+    <section class="form-card records-card">
+        <h2>Aquisições dos pacientes</h2>
+        {% if page_obj %}<div class="table-scroll"><table><thead><tr><th>Paciente e tratamento</th><th>Sessões utilizadas</th><th>Total</th><th>Acompanhar</th></tr></thead><tbody>
+            {% for treatment in page_obj %}<tr><td><strong>{{ treatment.patient.name }}</strong><br>{{ treatment.name }}<br><small>Aquisição #{{ treatment.pk }}</small></td><td>{{ treatment.used_count }} de {{ treatment.qty_sessions }}{% if not treatment.is_active %}<br><span class="status-badge">Inativo</span>{% endif %}</td><td>R$ {{ treatment.price|floatformat:2 }}</td><td><a href="{% url 'chorompo:treatment_detail' treatment.pk %}">Ver sessões</a></td></tr>{% endfor %}
+        </tbody></table></div>{% else %}<div class="empty-state"><h3>Nenhum tratamento adquirido ainda</h3><p>Selecione um paciente, um tratamento do catálogo e a quantidade de sessões para começar.</p></div>{% endif %}
+        {% include 'chorompo/includes/pagination.html' %}
+    </section>
+    <section class="form-card">
+        <h2>Vincular tratamento ao paciente</h2>
+        <p class="form-description">Cada sessão comprada será criada automaticamente. O total considera o preço por sessão multiplicado pela quantidade, menos o desconto.</p>
+        <form method="post" novalidate>{% csrf_token %}{% include 'chorompo/includes/fields.html' %}<button type="submit">Registrar aquisição <span aria-hidden="true">→</span></button></form>
+    </section>
+</div>
+{% endblock %}

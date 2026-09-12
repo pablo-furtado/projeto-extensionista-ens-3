@@ -1,0 +1,15 @@
+{% extends 'chorompo/base.html' %}
+{% block title %}Entrar | Chorompo{% endblock %}
+{% block content %}
+<section class="form-card narrow-card">
+    <span class="eyebrow">BEM-VINDO DE VOLTA</span>
+    <h1>Entre na sua clínica</h1>
+    <p class="form-description">Use o nome de usuário e a senha definidos no cadastro do seu perfil.</p>
+    <form method="post" novalidate>
+        {% csrf_token %}{% include 'chorompo/includes/fields.html' %}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+        <button type="submit">Entrar na plataforma <span aria-hidden="true">→</span></button>
+    </form>
+    <p class="form-footnote">Primeiro acesso? <a href="{% url 'chorompo:registration_start' %}">Criar ou continuar cadastro</a></p>
+</section>
+{% endblock %}

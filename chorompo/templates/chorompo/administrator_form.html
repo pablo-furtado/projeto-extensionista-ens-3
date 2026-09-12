@@ -1,0 +1,23 @@
+{% extends 'chorompo/base.html' %}
+{% block title %}Perfil do administrador | Chorompo{% endblock %}
+{% block content %}
+<div class="setup-layout">
+    <section class="setup-intro">
+        <span class="eyebrow">ETAPA 2 DE 3 · SEU PERFIL</span>
+        <h1>Agora, vamos conhecer quem está à frente da clínica.</h1>
+        <p>Você será o primeiro administrador de <strong>{{ company.name }}</strong>.</p>
+        <ol class="steps"><li>Clínica cadastrada</li><li aria-current="step"><strong>Perfil do administrador</strong></li><li>Configuração inicial</li></ol>
+        <p class="form-description">Seu perfil terá acesso a pacientes, tratamentos, agenda e cadastro de funcionários.</p>
+    </section>
+    <section class="form-card">
+        <h2>Seu perfil de administrador</h2>
+        <p class="form-description">Preencha seus dados pessoais e escolha como entrar na plataforma.</p>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <fieldset><legend>Dados pessoais</legend>{% include 'chorompo/includes/fields.html' %}</fieldset>
+            <fieldset><legend>Dados de acesso</legend>{% include 'chorompo/includes/fields.html' with form=account_form %}</fieldset>
+            <button type="submit">Criar administrador e continuar <span aria-hidden="true">→</span></button>
+        </form>
+    </section>
+</div>
+{% endblock %}

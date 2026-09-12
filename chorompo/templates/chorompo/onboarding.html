@@ -1,0 +1,21 @@
+{% extends 'chorompo/base.html' %}
+{% block title %}Configuração inicial | Chorompo{% endblock %}
+{% block content %}
+<div class="setup-layout">
+    <section class="setup-intro">
+        <span class="eyebrow">ETAPA 3 DE 3 · CONFIGURAÇÃO INICIAL</span>
+        <h1>Tudo começa com um bom cuidado.</h1>
+        <p>Seu perfil de administrador está pronto. Confira os dados da clínica para concluir a configuração inicial.</p>
+        <h2>Seus módulos já estão incluídos</h2>
+        <ul class="included-modules">{% for module in modules %}<li><strong>{{ module.title }}</strong><p>{{ module.description }}</p></li>{% endfor %}</ul>
+    </section>
+    <section class="form-card">
+        <h2>Confirme os dados da clínica</h2>
+        <p class="form-description">Depois, você poderá cadastrar seus pacientes, tratamentos, atendimentos e equipe.</p>
+        <form method="post" novalidate>
+            {% csrf_token %}{% include 'chorompo/includes/fields.html' %}
+            <button type="submit">Concluir e entrar na plataforma <span aria-hidden="true">→</span></button>
+        </form>
+    </section>
+</div>
+{% endblock %}

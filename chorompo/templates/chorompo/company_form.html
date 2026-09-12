@@ -1,0 +1,50 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cadastre sua clínica | Chorompo</title>
+    <link rel="stylesheet" href="{% static 'chorompo/css/company_form.css' %}">
+</head>
+<body>
+    <header class="site-header">
+        <a class="brand" href="{% url 'chorompo:company_create' %}" aria-label="Chorompo, início"><span class="brand-icon" aria-hidden="true">+</span> chorompo<span class="brand-dot">.</span></a>
+        <a class="header-caption" href="{% url 'chorompo:login' %}">Já tenho conta</a>
+    </header>
+    <main class="layout">
+        <section class="intro" aria-labelledby="intro-title">
+            <span class="eyebrow">MAIS TEMPO PARA CUIDAR</span>
+            <h1 id="intro-title">O cuidado começa com uma clínica bem organizada.</h1>
+            <p>Cadastre sua clínica na Chorompo e dê o primeiro passo para organizar sua equipe e seus pacientes em um só lugar.</p>
+            <div class="intro-note"><span class="note-icon" aria-hidden="true">+</span><div><strong>Sua clínica, conectada.</strong><p>Uma gestão pensada para quem cuida de pessoas.</p></div></div>
+            <div class="decoration" aria-hidden="true"><span></span><span></span><span>+</span></div>
+        </section>
+        <section class="form-card" aria-labelledby="form-title">
+            <span class="eyebrow">ETAPA 1 DE 3 · SUA CLÍNICA</span>
+            <h2 id="form-title">Cadastre sua clínica</h2>
+            <p class="form-description">Preencha os dados da empresa. Todos os campos são obrigatórios.</p>
+            {% for message in messages %}
+                <div class="success-message" role="status">{{ message }}</div>
+            {% endfor %}
+            <form method="post" novalidate>
+                {% csrf_token %}
+                {% if form.errors %}<div class="error-summary" role="alert">Confira os campos indicados abaixo para concluir o cadastro.</div>{% endif %}
+                {% for error in form.non_field_errors %}<p class="field-error" role="alert">{{ error }}</p>{% endfor %}
+                <div class="fields">
+                    {% for field in form %}
+                        <div class="field field-{{ field.name }}{% if field.errors %} has-error{% endif %}">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}<div id="{{ field.auto_id }}_error" class="field-error">{% for error in field.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <button type="submit">Cadastrar clínica e continuar <span aria-hidden="true">→</span></button>
+                <p class="form-footnote">Clínica já cadastrada? <a href="{% url 'chorompo:registration_start' %}">Continuar cadastro do administrador</a></p>
+            </form>
+        </section>
+    </main>
+    <footer>Chorompo · Cuidar da gestão também é cuidar de pessoas.</footer>
+</body>
+</html>

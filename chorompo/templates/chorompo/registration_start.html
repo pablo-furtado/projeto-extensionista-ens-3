@@ -1,0 +1,14 @@
+{% extends 'chorompo/base.html' %}
+{% block title %}Crie seu perfil | Chorompo{% endblock %}
+{% block content %}
+<section class="form-card narrow-card">
+    <span class="eyebrow">SUA CLÍNICA NA CHOROMPO</span>
+    <h1>Vamos criar seu perfil</h1>
+    <p class="form-description">Informe o e-mail da clínica. Se o cadastro já foi iniciado, enviaremos um link para confirmar o e-mail e criar o primeiro administrador. Se for uma nova clínica, vamos cadastrar seus dados primeiro.</p>
+    <form method="post" novalidate>
+        {% csrf_token %}{% include 'chorompo/includes/fields.html' %}
+        <button type="submit">Continuar <span aria-hidden="true">→</span></button>
+    </form>
+    <p class="form-footnote">Já tem um usuário? <a href="{% url 'chorompo:login' %}">Entrar na plataforma</a></p>
+</section>
+{% endblock %}
