@@ -1,10 +1,10 @@
 ROLE_PERMISSIONS = {
 
-    "ADMIN": {"patients", "treatments", "appointments", "employees"},
+    "ADMIN": {"patients", "treatments", "appointments", "employees", "finance"},
 
     "RECEPTION": {"patients", "appointments"},
 
-    "FINANCIAL": set(),
+    "FINANCIAL": {"finance"},
 
     "PROFESSIONAL": {"patients", "treatments", "appointments"},
 }

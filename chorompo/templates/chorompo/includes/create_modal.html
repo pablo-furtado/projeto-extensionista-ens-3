@@ -1,0 +1,11 @@
+<dialog id="create-record-modal" class="erp-modal" aria-labelledby="create-modal-title" {% if form.errors or account_form.errors %}data-auto-open{% endif %}>
+    <header class="modal-header"><div><span class="eyebrow">{{ company.name }}</span><h2 id="create-modal-title">{% if active_module == 'patients' %}Novo paciente{% elif active_module == 'employees' %}Novo funcionário{% else %}Novo agendamento{% endif %}</h2></div><button type="button" class="modal-close" data-modal-close aria-label="Fechar formulário">×</button></header>
+    <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="modal-body">
+            {% include 'chorompo/includes/fields.html' %}
+            {% if account_form %}<fieldset><legend>Dados de acesso</legend>{% include 'chorompo/includes/fields.html' with form=account_form %}</fieldset>{% endif %}
+        </div>
+        <footer class="modal-footer"><button type="button" class="secondary-button" data-modal-close>Cancelar</button><button type="submit" class="compact-button">Salvar</button></footer>
+    </form>
+</dialog>

@@ -10,7 +10,8 @@ from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
-from django.shortcuts import redirect, render
+from django.db.models import Q
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
@@ -20,7 +21,7 @@ from django.views.decorators.http import require_http_methods
 from .access import clinic_required
 from .forms import AccountForm, AppointmentForm, CompanyForm, EmployeeForm, EmployeeProfileForm, PatientForm, RegistrationEmailForm
 from .group_permission import has_permission
-from .models import Company, CompanyMembership, Employee
+from .models import Company, CompanyMembership, Employee, Patient
 from .registration import company_from_token, load_registration_company, registration_token
 from .treatment_services import save_appointment
 
@@ -167,16 +168,26 @@ def administrator_create(request):
 
 MODULES = [
     {"key": "patients", "title": "Pacientes", "description": "Organize os dados dos pacientes da clínica.", "url": "chorompo:patients", "icon": "P"},
-    {"key": "treatments", "title": "Tratamentos", "description": "Gerencie o catálogo, as aquisições dos pacientes, as sessões e as evoluções.", "url": "chorompo:treatments", "icon": "T"},
+    {"key": "treatments", "title": "Tratamentos", "description": "Acompanhe as aquisições dos pacientes, as sessões e as evoluções.", "url": "chorompo:treatment_purchases", "icon": "T"},
     {"key": "appointments", "title": "Agenda", "description": "Agende atendimentos com pacientes e profissionais.", "url": "chorompo:appointments", "icon": "A"},
-    {"key": "employees", "title": "Funcionários", "description": "Adicione pessoas à equipe e defina seus perfis de acesso.", "url": "chorompo:employees", "icon": "F"},
+    {"key": "finance", "title": "Financeiro", "description": "Acompanhe as vendas e os indicadores da clínica.", "url": "chorompo:finance", "icon": "$"},
+]
+
+
+SETTINGS_MODULES = [
+    {"key": "employees", "permission": "employees", "title": "Funcionários", "url": "chorompo:employees", "icon": "F"},
+    {"key": "treatment_catalog", "permission": "treatments", "title": "Catálogo da clínica", "url": "chorompo:treatments", "icon": "C"},
 ]
 
 
 def platform_context(request):
+    params = request.GET.copy()
+    params.pop("page", None)
     return {
         "company": request.company, "membership": request.membership,
         "modules": [module for module in MODULES if has_permission(request.membership, module["key"])],
+        "settings_modules": [module for module in SETTINGS_MODULES if has_permission(request.membership, module["permission"])],
+        "filter_query": params.urlencode(),
         "can_manage_treatments": has_permission(request.membership, "treatments"),
     }
 
@@ -206,7 +217,16 @@ def onboarding(request):
 @clinic_required()
 @require_http_methods(["GET"])
 def dashboard(request):
-    return render(request, "chorompo/dashboard.html", platform_context(request))
+    today = timezone.localdate()
+    stats = []
+    if has_permission(request.membership, "patients"):
+        stats.append({"label": "Pacientes cadastrados", "value": request.company.patients.count()})
+    if has_permission(request.membership, "appointments"):
+        stats.append({"label": "Atendimentos hoje", "value": request.company.appointments.filter(starts_at__date=today).count()})
+        stats.append({"label": "Agendamentos futuros", "value": request.company.appointments.filter(starts_at__gte=timezone.now()).count()})
+    if has_permission(request.membership, "treatments"):
+        stats.append({"label": "Tratamentos no catálogo", "value": request.company.company_treatments.count()})
+    return render(request, "chorompo/dashboard.html", {**platform_context(request), "stats": stats, "today": today})
 
 
 def module_page(request, *, key, title, form, records, headers, row_builder):
@@ -226,10 +246,13 @@ def module_page(request, *, key, title, form, records, headers, row_builder):
         else:
             messages.success(request, "Cadastro salvo com sucesso.")
             return redirect(f"chorompo:{key}")
+    query = request.GET.get("q", "").strip()[:100]
+    if query:
+        records = records.filter(Q(name__icontains=query) | Q(cpf__icontains=query) | Q(phone_number__icontains=query))
     page = Paginator(records, 20).get_page(request.GET.get("page"))
     return render(request, "chorompo/module.html", {
         **platform_context(request), "title": title, "form": form, "headers": headers,
-        "rows": [row_builder(record) for record in page], "page_obj": page, "active_module": key,
+        "rows": [{"values": row_builder(record), "edit_url": reverse("chorompo:patient_edit", args=[record.pk])} for record in page], "query": query, "page_obj": page, "active_module": key,
     })
 
 
@@ -239,17 +262,6 @@ def patients(request):
     return module_page(request, key="patients", title="Pacientes", form=PatientForm(request.POST if request.method == "POST" else None),
         records=request.company.patients.order_by("name"), headers=["Nome", "Telefone", "Nascimento"],
         row_builder=lambda patient: [patient.name, patient.phone_number, patient.birth_date.strftime("%d/%m/%Y")])
-
-
-@clinic_required("appointments")
-@require_http_methods(["GET", "POST"])
-def appointments(request):
-    return module_page(request, key="appointments", title="Agenda", form=AppointmentForm(request.POST if request.method == "POST" else None, company=request.company),
-        records=request.company.appointments.select_related("patient", "treatment", "treatment_company", "session", "professional"),
-        headers=["Data e horário", "Paciente", "Tratamento", "Sessão", "Profissional"],
-        row_builder=lambda appointment: [timezone.localtime(appointment.starts_at).strftime("%d/%m/%Y %H:%M"), appointment.patient.name,
-            appointment.treatment.name if appointment.treatment_id else appointment.treatment_company.name,
-            appointment.session.session_number if appointment.session_id else "Agendamento anterior ao controle de sessões", appointment.professional.name])
 
 
 @sensitive_post_parameters("password1", "password2")
@@ -269,9 +281,45 @@ def employees(request):
             else:
                 messages.success(request, "Funcionário cadastrado com sucesso. Ele já pode entrar com o usuário e a senha definidos.")
                 return redirect("chorompo:employees")
-    page = Paginator(Employee.objects.filter(membership__company=request.company).select_related("membership", "membership__user").order_by("name"), 20).get_page(request.GET.get("page"))
+    records = Employee.objects.filter(membership__company=request.company).select_related("membership", "membership__user").order_by("name")
+    query = request.GET.get("q", "").strip()[:100]
+    if query:
+        records = records.filter(Q(name__icontains=query) | Q(cpf__icontains=query) | Q(membership__user__username__icontains=query))
+    page = Paginator(records, 20).get_page(request.GET.get("page"))
     return render(request, "chorompo/module.html", {
         **platform_context(request), "title": "Funcionários", "form": form, "account_form": account_form,
         "headers": ["Nome", "Usuário", "Perfil", "Situação"], "active_module": "employees", "page_obj": page,
-        "rows": [[employee.name, employee.membership.user.username, employee.membership.get_role_display(), "Ativo" if employee.membership.is_active and employee.membership.user.is_active else "Inativo"] for employee in page],
+        "query": query, "rows": [{"values": [employee.name, employee.membership.user.username, employee.membership.get_role_display(), "Ativo" if employee.membership.is_active and employee.membership.user.is_active else "Inativo"], "edit_url": reverse("chorompo:employee_edit", args=[employee.pk])} for employee in page],
+    })
+
+
+@clinic_required("patients")
+@require_http_methods(["GET", "POST"])
+def patient_edit(request, pk):
+    patient = get_object_or_404(Patient, pk=pk, company=request.company)
+    form = PatientForm(request.POST if request.method == "POST" else None, instance=patient)
+    return edit_profile(request, form, "patients", "Editar paciente")
+
+
+@clinic_required("employees")
+@require_http_methods(["GET", "POST"])
+def employee_edit(request, pk):
+    employee = get_object_or_404(Employee, pk=pk, membership__company=request.company)
+    form = EmployeeProfileForm(request.POST if request.method == "POST" else None, instance=employee)
+    return edit_profile(request, form, "employees", "Editar funcionário")
+
+
+def edit_profile(request, form, module, title):
+    if request.method == "POST" and form.is_valid():
+        try:
+            with transaction.atomic():
+                form.save()
+        except IntegrityError:
+            form.add_error(None, "Não foi possível salvar. Confira se o CPF já foi cadastrado.")
+        else:
+            messages.success(request, "Cadastro atualizado com sucesso.")
+            return redirect(f"chorompo:{module}")
+    return render(request, "chorompo/edit.html", {
+        **platform_context(request), "form": form, "title": title, "active_module": module,
+        "back_url": reverse(f"chorompo:{module}"),
     })

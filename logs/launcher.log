@@ -1,0 +1,224 @@
+
+
+──────── START LOG ────────
+TIME  : 2026-09-16 20:46:57,280
+LEVEL : INFO
+N° DEB: -
+LOGGER: utils.logger
+FILE  : start.py | line: 19
+FUNC  : run
+MSG   : Iniciando processo
+
+DETAILS: -
+
+
+
+
+──────── START LOG ────────
+TIME  : 2026-09-16 20:46:57,469
+LEVEL : INFO
+N° DEB: -
+LOGGER: utils.logger
+FILE  : start.py | line: 36
+FUNC  : run
+MSG   : FAST API ONLINE
+
+DETAILS: -
+
+
+
+
+──────── START LOG ────────
+TIME  : 2026-09-16 20:46:57,766
+LEVEL : INFO
+N° DEB: -
+LOGGER: utils.logger
+FILE  : start.py | line: 45
+FUNC  : run
+MSG   : DJANGO ONLINE
+
+DETAILS: -
+
+
+
+
+──────── START LOG ────────
+TIME  : 2026-09-16 20:46:58,088
+LEVEL : INFO
+N° DEB: -
+LOGGER: utils.logger
+FILE  : start.py | line: 53
+FUNC  : run
+MSG   : WORKER ONLINE
+
+DETAILS: -
+
+
+
+
+──────── START LOG ────────
+TIME  : 2026-09-16 20:46:58,813
+LEVEL : INFO
+N° DEB: -
+LOGGER: utils.logger
+FILE  : start.py | line: 61
+FUNC  : run
+MSG   : WORKER CONFIRMAÇÃO AGENDAMENTO ONLINE
+
+DETAILS: -
+
+
+
+
+──────── START LOG ────────
+TIME  : 2026-09-16 20:46:59,925
+LEVEL : INFO
+N° DEB: -
+LOGGER: utils.logger
+FILE  : start.py | line: 69
+FUNC  : run
+MSG   : WORKER FOLLOW-UP ONLINE
+
+DETAILS: -
+
+
+
+
+──────── START LOG ────────
+TIME  : 2026-09-16 20:47:00,928
+LEVEL : INFO
+N° DEB: -
+LOGGER: utils.logger
+FILE  : start.py | line: 77
+FUNC  : run
+MSG   : WORKER NOTIFICAÇÃO DE INSTÂNCIA FECHADA ONLINE
+
+DETAILS: -
+
+
+
+
+──────── START LOG ────────
+TIME  : 2026-09-16 20:47:02,019
+LEVEL : INFO
+N° DEB: -
+LOGGER: utils.logger
+FILE  : start.py | line: 84
+FUNC  : run
+MSG   : SCHEDULER ONLINE
+
+DETAILS: -
+
+
+
+
+──────── START LOG ────────
+TIME  : 2026-09-16 20:51:38,754
+LEVEL : INFO
+N° DEB: -
+LOGGER: utils.logger
+FILE  : start.py | line: 19
+FUNC  : run
+MSG   : Iniciando processo
+
+DETAILS: -
+
+
+
+
+──────── START LOG ────────
+TIME  : 2026-09-16 20:51:38,962
+LEVEL : INFO
+N° DEB: -
+LOGGER: utils.logger
+FILE  : start.py | line: 36
+FUNC  : run
+MSG   : FAST API ONLINE
+
+DETAILS: -
+
+
+
+
+──────── START LOG ────────
+TIME  : 2026-09-16 20:51:39,250
+LEVEL : INFO
+N° DEB: -
+LOGGER: utils.logger
+FILE  : start.py | line: 45
+FUNC  : run
+MSG   : DJANGO ONLINE
+
+DETAILS: -
+
+
+
+
+──────── START LOG ────────
+TIME  : 2026-09-16 20:51:39,610
+LEVEL : INFO
+N° DEB: -
+LOGGER: utils.logger
+FILE  : start.py | line: 53
+FUNC  : run
+MSG   : WORKER ONLINE
+
+DETAILS: -
+
+
+
+
+──────── START LOG ────────
+TIME  : 2026-09-16 20:51:40,436
+LEVEL : INFO
+N° DEB: -
+LOGGER: utils.logger
+FILE  : start.py | line: 61
+FUNC  : run
+MSG   : WORKER CONFIRMAÇÃO AGENDAMENTO ONLINE
+
+DETAILS: -
+
+
+
+
+──────── START LOG ────────
+TIME  : 2026-09-16 20:51:42,071
+LEVEL : INFO
+N° DEB: -
+LOGGER: utils.logger
+FILE  : start.py | line: 69
+FUNC  : run
+MSG   : WORKER FOLLOW-UP ONLINE
+
+DETAILS: -
+
+
+
+
+──────── START LOG ────────
+TIME  : 2026-09-16 20:51:43,074
+LEVEL : INFO
+N° DEB: -
+LOGGER: utils.logger
+FILE  : start.py | line: 77
+FUNC  : run
+MSG   : WORKER NOTIFICAÇÃO DE INSTÂNCIA FECHADA ONLINE
+
+DETAILS: -
+
+
+
+
+──────── START LOG ────────
+TIME  : 2026-09-16 20:51:44,167
+LEVEL : INFO
+N° DEB: -
+LOGGER: utils.logger
+FILE  : start.py | line: 84
+FUNC  : run
+MSG   : SCHEDULER ONLINE
+
+DETAILS: -
+
+

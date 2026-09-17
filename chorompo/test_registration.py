@@ -237,9 +237,10 @@ class PlatformAccessTests(TestCase):
         treatment = Treatment.objects.create(company=self.company, patient=patient, treatment=catalog, name="Consulta")
         session = TreatmentSession.objects.create(treatment=treatment, session_number=1)
         response = self.client.post(reverse("chorompo:appointments"), {"patient": patient.pk, "treatment": treatment.pk, "session": session.pk, "professional": self.employee.pk, "starts_at": "2027-01-10T10:00"})
-        self.assertRedirects(response, reverse("chorompo:appointments"))
+        self.assertRedirects(response, reverse("chorompo:appointments") + "?date=2027-01-10")
         self.assertEqual(Appointment.objects.get().company, self.company)
-        self.assertContains(self.client.get(reverse("chorompo:appointments")), "10/01/2027 10:00")
+        self.assertContains(self.client.get(response.url), "10:00")
+        self.assertContains(self.client.get(response.url), "Paciente A")
 
     def test_admin_can_create_employee_with_login_and_role(self):
         response = self.client.post(reverse("chorompo:employees"), {

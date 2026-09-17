@@ -4,12 +4,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% include 'chorompo/includes/favicons.html' %}
     <title>Cadastre sua clínica | Chorompo</title>
     <link rel="stylesheet" href="{% static 'chorompo/css/company_form.css' %}">
 </head>
 <body>
     <header class="site-header">
-        <a class="brand" href="{% url 'chorompo:company_create' %}" aria-label="Chorompo, início"><span class="brand-icon" aria-hidden="true">+</span> chorompo<span class="brand-dot">.</span></a>
+        <a class="brand" href="{% url 'chorompo:company_create' %}" aria-label="Chorompo, início">{% include 'chorompo/includes/brand.html' %}</a>
         <a class="header-caption" href="{% url 'chorompo:login' %}">Já tenho conta</a>
     </header>
     <main class="layout">

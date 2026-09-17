@@ -2,6 +2,7 @@
 {% block title %}Sessões de {{ treatment.patient.name }} | Chorompo{% endblock %}
 {% block content %}
 {% include 'chorompo/treatments/nav.html' %}
+{% if treatment.package_id %}<p><a href="{% url 'chorompo:treatment_package_detail' treatment.package_id %}">← Ver pacote de compra #{{ treatment.package_id }}</a></p>{% endif %}
 <section class="page-heading"><span class="eyebrow">AQUISIÇÃO #{{ treatment.pk }} · {{ treatment.patient.name }}</span><h1>{{ treatment.name }}</h1><p>{{ treatment.description }}</p></section>
 <div class="session-summary">
     <div><span>Compradas</span><strong>{{ treatment.qty_sessions }}</strong></div>

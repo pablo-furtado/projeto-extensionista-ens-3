@@ -1,9 +1,10 @@
 {% extends 'chorompo/base.html' %}
 {% block title %}Catálogo de tratamentos | Chorompo{% endblock %}
 {% block content %}
-<section class="page-heading"><span class="eyebrow">{{ company.name }} · TRATAMENTOS</span><h1>O cuidado que sua clínica oferece.</h1><p>Cadastre os tratamentos, a duração e o preço por sessão. Depois, vincule as aquisições aos pacientes.</p></section>
+<section class="page-heading heading-actions"><div><span class="eyebrow">{{ company.name }} · CONFIGURAÇÕES</span><h1>Catálogo da clínica</h1><p>Cadastre os tratamentos, a duração e o preço por sessão.</p></div><a class="primary-button" href="{% url 'chorompo:treatment_company_create' %}">+ Cadastro de tratamentos</a></section>
 {% include 'chorompo/treatments/nav.html' %}
-<div class="module-layout">
+{% include 'chorompo/includes/search.html' %}
+<div class="catalog-page">
     <section aria-label="Tratamentos do catálogo">
         <div class="catalog-list">
             {% for item in page_obj %}
@@ -15,14 +16,9 @@
                 <dl class="cost-summary"><div><dt>Custo fixo</dt><dd>R$ {{ item.fixed_cost|default_if_none:0|floatformat:2 }}</dd></div><div><dt>Custo variável</dt><dd>R$ {{ item.variable_cost|default_if_none:0|floatformat:2 }}</dd></div><div><dt>Desconto máximo</dt><dd>{{ item.max_discount_percentage|default_if_none:0|floatformat:2 }}%</dd></div></dl>
                 <a class="module-link" href="{% url 'chorompo:treatment_company_edit' item.pk %}">Editar tratamento →</a>
             </article>
-            {% empty %}<div class="form-card empty-state"><span class="module-icon" aria-hidden="true">T</span><h2>Monte o catálogo da sua clínica</h2><p>Adicione o primeiro tratamento usando o formulário ao lado.</p></div>{% endfor %}
+            {% empty %}<div class="form-card empty-state"><span class="module-icon" aria-hidden="true">T</span><h2>Monte o catálogo da sua clínica</h2><p><a href="{% url 'chorompo:treatment_company_create' %}">Cadastrar o primeiro tratamento →</a></p></div>{% endfor %}
         </div>
         {% include 'chorompo/includes/pagination.html' %}
-    </section>
-    <section class="form-card">
-        <h2>Novo tratamento da clínica</h2>
-        <p class="form-description">Os preços e custos informados correspondem a uma sessão.</p>
-        <form method="post" novalidate>{% csrf_token %}{% include 'chorompo/includes/fields.html' %}<button type="submit">Adicionar ao catálogo <span aria-hidden="true">→</span></button></form>
     </section>
 </div>
 {% endblock %}

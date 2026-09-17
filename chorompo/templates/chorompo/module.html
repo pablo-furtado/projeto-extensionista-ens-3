@@ -1,24 +1,17 @@
 {% extends 'chorompo/base.html' %}
 {% block title %}{{ title }} | Chorompo{% endblock %}
 {% block content %}
-<section class="page-heading"><span class="eyebrow">{{ company.name }}</span><h1>{{ title }}</h1><p>Consulte os registros da clínica ou adicione um novo cadastro.</p></section>
+<section class="page-heading heading-actions"><div><span class="eyebrow">{{ company.name }}</span><h1>{{ title }}</h1><p>Consulte os registros da clínica ou adicione um novo cadastro.</p></div><button type="button" class="primary-button compact-button" data-modal-open="create-record-modal">+ {% if active_module == 'employees' %}Novo funcionário{% else %}Novo paciente{% endif %}</button></section>
 {% if can_manage_treatments and active_module == 'patients' %}<p class="form-description"><a href="{% url 'chorompo:treatment_purchases' %}">Vincular tratamentos aos pacientes e acompanhar sessões →</a></p>{% endif %}
-<div class="module-layout">
+{% include 'chorompo/includes/search.html' %}
+<div class="records-page">
     <section class="form-card records-card" aria-label="Registros cadastrados">
         <h2>Registros cadastrados</h2>
         {% if rows %}
-            <div class="table-scroll"><table><thead><tr>{% for header in headers %}<th scope="col">{{ header }}</th>{% endfor %}</tr></thead><tbody>{% for row in rows %}<tr>{% for value in row %}<td>{{ value }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>
-            {% if page_obj.has_other_pages %}<nav class="pagination" aria-label="Paginação">{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">Anterior</a>{% endif %}<span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>{% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Próxima</a>{% endif %}</nav>{% endif %}
+            <div class="table-scroll"><table><thead><tr>{% for header in headers %}<th scope="col">{{ header }}</th>{% endfor %}<th scope="col">Ações</th></tr></thead><tbody>{% for row in rows %}<tr>{% for value in row.values %}<td>{{ value }}</td>{% endfor %}<td><a class="row-action" href="{{ row.edit_url }}" data-modal-edit>Editar →</a></td></tr>{% endfor %}</tbody></table></div>
+            {% include 'chorompo/includes/pagination.html' %}
         {% else %}<div class="empty-state"><span class="module-icon" aria-hidden="true">+</span><h3>Seu primeiro cadastro começa aqui</h3><p>Use o formulário para adicionar um registro a este módulo.</p>{% if active_module == 'appointments' %}<p>Para agendar, o paciente precisa ter um tratamento adquirido com uma sessão disponível. Agendar não consome a sessão.</p>{% endif %}</div>{% endif %}
     </section>
-    <section class="form-card">
-        <h2>{% if active_module == 'appointments' %}Novo agendamento{% elif active_module == 'employees' %}Novo funcionário{% else %}Novo cadastro{% endif %}</h2>
-        <form method="post" novalidate>
-            {% csrf_token %}
-            {% include 'chorompo/includes/fields.html' %}
-            {% if account_form %}<fieldset><legend>Dados de acesso do funcionário</legend>{% include 'chorompo/includes/fields.html' with form=account_form %}</fieldset>{% endif %}
-            <button type="submit">Salvar cadastro <span aria-hidden="true">→</span></button>
-        </form>
-    </section>
 </div>
+{% include 'chorompo/includes/create_modal.html' %}
 {% endblock %}

@@ -10,11 +10,122 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .forms import AppointmentForm
-from .models import Appointment, Company, CompanyMembership, Employee, EvolutionOfTreatment, Patient, Treatment, TreatmentCompany, TreatmentSession
+from .models import Appointment, Company, CompanyMembership, Employee, EvolutionOfTreatment, Patient, Treatment, TreatmentCompany, TreatmentPackage, TreatmentSession
 from .treatment_services import acquire_treatment, record_evolution
 
 
 class TreatmentFlowTests(TestCase):
+    def test_purchase_form_has_its_own_page_and_saves_package(self):
+        listing = self.client.get(reverse("chorompo:treatment_purchases"))
+        self.assertNotContains(listing, 'id="package-form"')
+        self.assertContains(listing, reverse("chorompo:treatment_purchase_create"))
+        page = self.client.get(reverse("chorompo:treatment_purchase_create"))
+        self.assertContains(page, 'id="package-form"')
+        response = self.client.post(reverse("chorompo:treatment_purchase_create"), self.package_data())
+        self.assertRedirects(response, reverse("chorompo:treatment_package_detail", args=[TreatmentPackage.objects.get().pk]))
+
+    def test_settings_separates_catalog_and_employees_from_operations(self):
+        response = self.client.get(reverse("chorompo:treatments"))
+        self.assertEqual(response.context["active_module"], "treatment_catalog")
+        self.assertNotIn("employees", [item["key"] for item in response.context["modules"]])
+        self.assertEqual({item["key"] for item in response.context["settings_modules"]}, {"employees", "treatment_catalog"})
+        self.assertContains(response, 'class="nav-settings" open')
+        self.assertContains(response, reverse("chorompo:treatment_company_create"))
+        self.assertNotContains(self.client.get(reverse("chorompo:treatment_purchases")), reverse("chorompo:treatment_company_create"))
+
+    def test_reception_has_no_internal_settings_or_purchase_access(self):
+        self.membership.role = "RECEPTION"
+        self.membership.save()
+        response = self.client.get(reverse("chorompo:patients"))
+        self.assertEqual(response.context["settings_modules"], [])
+        self.assertNotContains(response, 'class="nav-settings"')
+        for method in (self.client.get, self.client.post):
+            self.assertEqual(method(reverse("chorompo:treatment_purchase_create")).status_code, 403)
+
+    def package_data(self):
+        second = TreatmentCompany.objects.create(company=self.company, name="Pilates do pacote", price=Decimal("80.00"))
+        return {
+            "patient": self.patient.pk, "name": "Pacote de reabilitação",
+            "items-TOTAL_FORMS": "2", "items-INITIAL_FORMS": "0",
+            "items-0-treatment": self.catalog.pk, "items-0-qty_sessions": "3", "items-0-discount_percentage": "10",
+            "items-1-treatment": second.pk, "items-1-qty_sessions": "2", "items-1-discount_percentage": "0",
+        }
+
+    def test_package_creates_all_treatments_and_independent_sessions(self):
+        response = self.client.post(reverse("chorompo:treatment_purchases"), self.package_data())
+        package = TreatmentPackage.objects.get()
+        self.assertRedirects(response, reverse("chorompo:treatment_package_detail", args=[package.pk]))
+        self.assertEqual(package.patient, self.patient)
+        self.assertEqual(package.company, self.company)
+        self.assertEqual(package.total_price, Decimal("430.00"))
+        self.assertEqual(package.treatments.count(), 2)
+        self.assertEqual(TreatmentSession.objects.count(), 5)
+        treatment = package.treatments.get(treatment=self.catalog)
+        self.assertEqual(list(treatment.sessions.values_list("session_number", flat=True)), [1, 2, 3])
+        record_evolution(session=treatment.sessions.first(), employee=self.employee, date=timezone.localdate(), notes="Realizada", uses_session=True)
+        self.assertEqual(treatment.used_sessions, 1)
+        self.assertEqual(package.treatments.exclude(pk=treatment.pk).get().used_sessions, 0)
+        self.assertContains(self.client.get(reverse("chorompo:treatment_package_detail", args=[package.pk])), "430,00")
+
+    def test_package_invalid_item_preserves_input_and_saves_nothing(self):
+        data = self.package_data()
+        data["items-1-qty_sessions"] = "0"
+        response = self.client.post(reverse("chorompo:treatment_purchases"), data)
+        self.assertContains(response, "Pacote de reabilitação")
+        self.assertIn("qty_sessions", response.context["formset"].forms[1].errors)
+        self.assertFalse(TreatmentPackage.objects.exists())
+        self.assertFalse(Treatment.objects.exists())
+
+    def test_package_failure_in_second_item_rolls_back_everything(self):
+        from .treatment_services import acquire_treatment
+        data = self.package_data()
+        calls = 0
+        def fail_second(**kwargs):
+            nonlocal calls
+            calls += 1
+            if calls == 2:
+                raise IntegrityError("second item failed")
+            return acquire_treatment(**kwargs)
+        with patch("chorompo.treatment_services.acquire_treatment", side_effect=fail_second):
+            response = self.client.post(reverse("chorompo:treatment_purchases"), data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(calls, 2)
+        self.assertFalse(TreatmentPackage.objects.exists())
+        self.assertFalse(Treatment.objects.exists())
+        self.assertFalse(TreatmentSession.objects.exists())
+
+    def test_package_rejects_duplicate_and_foreign_treatments(self):
+        data = self.package_data()
+        for catalog in [self.catalog, self.foreign_catalog]:
+            data["items-1-treatment"] = catalog.pk
+            response = self.client.post(reverse("chorompo:treatment_purchases"), data)
+            self.assertEqual(response.status_code, 200)
+            self.assertFalse(TreatmentPackage.objects.exists())
+
+    def test_package_deleted_item_is_not_purchased(self):
+        data = self.package_data()
+        data["items-1-DELETE"] = "on"
+        response = self.client.post(reverse("chorompo:treatment_purchases"), data)
+        package = TreatmentPackage.objects.get()
+        self.assertRedirects(response, reverse("chorompo:treatment_package_detail", args=[package.pk]))
+        self.assertEqual(package.treatments.count(), 1)
+        self.assertEqual(package.total_price, Decimal("270.00"))
+
+    def test_package_requires_patient_from_clinic_and_management_form(self):
+        data = self.package_data()
+        data["patient"] = self.foreign_patient.pk
+        response = self.client.post(reverse("chorompo:treatment_purchases"), data)
+        self.assertIn("patient", response.context["form"].errors)
+        data["patient"] = self.patient.pk
+        del data["items-TOTAL_FORMS"]
+        response = self.client.post(reverse("chorompo:treatment_purchases"), data)
+        self.assertTrue(response.context["formset"].non_form_errors())
+        self.assertFalse(TreatmentPackage.objects.exists())
+
+    def test_foreign_package_is_not_accessible(self):
+        package = TreatmentPackage.objects.create(company=self.other, patient=self.foreign_patient)
+        self.assertEqual(self.client.get(reverse("chorompo:treatment_package_detail", args=[package.pk])).status_code, 404)
+
     @classmethod
     def setUpTestData(cls):
         cls.company = Company.objects.create(name="Clínica A", cpf_cnpj="11222333000181", cep="78000000", phone_number="65999999999", email="a@example.com", onboarding_completed=True)
@@ -218,7 +329,7 @@ class TreatmentFlowTests(TestCase):
         session = treatment.sessions.first()
         data = {"patient": self.patient.pk, "treatment": treatment.pk, "session": session.pk, "professional": self.employee.pk, "starts_at": "2027-01-01T10:00"}
         response = self.client.post(reverse("chorompo:appointments"), data)
-        self.assertRedirects(response, reverse("chorompo:appointments"))
+        self.assertRedirects(response, reverse("chorompo:appointments") + "?date=2027-01-01")
         self.assertEqual(treatment.used_sessions, 0)
         self.assertContains(self.client.get(reverse("chorompo:treatment_detail", args=[treatment.pk])), "Agendada")
         response = self.client.post(reverse("chorompo:appointments"), data)

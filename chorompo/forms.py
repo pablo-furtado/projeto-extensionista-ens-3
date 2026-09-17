@@ -4,6 +4,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.db.models import Q
 
 from .models import Appointment, Company, CompanyMembership, Employee, EvolutionOfTreatment, Patient, Treatment, TreatmentCompany, TreatmentSession
 
@@ -179,6 +180,47 @@ class TreatmentForm(StyledFormMixin, forms.ModelForm):
         return data
 
 
+class TreatmentPackageForm(StyledFormMixin, forms.Form):
+    patient = forms.ModelChoiceField(label="Paciente", queryset=Patient.objects.none())
+    name = forms.CharField(label="Nome do pacote", max_length=100, initial="Pacote de tratamentos")
+
+    def __init__(self, *args, company, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["patient"].queryset = company.patients.order_by("name")
+
+
+class TreatmentPackageItemForm(TreatmentForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields.pop("patient")
+
+
+class BaseTreatmentPackageFormSet(forms.BaseFormSet):
+    def add_fields(self, form, index):
+        super().add_fields(form, index)
+        form.fields["DELETE"].label = "Remover do pacote"
+
+    def clean(self):
+        super().clean()
+        if any(self.errors):
+            return
+        seen = set()
+        for form in self.forms:
+            if not form.cleaned_data or form.cleaned_data.get("DELETE"):
+                continue
+            catalog = form.cleaned_data["treatment"]
+            if catalog.pk in seen:
+                raise forms.ValidationError("Selecione cada tratamento uma única vez e informe a quantidade de sessões desejada.")
+            seen.add(catalog.pk)
+
+
+TreatmentPackageFormSet = forms.formset_factory(
+    TreatmentPackageItemForm, formset=BaseTreatmentPackageFormSet,
+    extra=0, min_num=1, validate_min=True, max_num=20, validate_max=True,
+    absolute_max=40, can_delete=True,
+)
+
+
 class EvolutionOfTreatmentForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = EvolutionOfTreatment
@@ -218,8 +260,8 @@ class AppointmentForm(StyledFormMixin, forms.ModelForm):
         self.fields["session"].required = True
         self.fields["treatment"].queryset = company.treatments.filter(is_active=True).select_related("patient").order_by("patient__name", "name", "pk")
         self.fields["session"].queryset = TreatmentSession.objects.filter(
-            treatment__company=company, treatment__is_active=True, session_held=0, appointment__isnull=True,
-        ).select_related("treatment__patient").order_by("treatment_id", "session_number")
+            treatment__company=company, treatment__is_active=True, session_held=0,
+        ).filter(Q(appointment__isnull=True) | Q(appointment__pk=self.instance.pk)).select_related("treatment__patient").order_by("treatment_id", "session_number")
         self.fields["professional"].queryset = Employee.objects.filter(
             membership__company=company, membership__is_active=True, membership__user__is_active=True,
             membership__role__in=[CompanyMembership.Role.ADMIN, CompanyMembership.Role.PROFESSIONAL],
@@ -230,4 +272,30 @@ class AppointmentForm(StyledFormMixin, forms.ModelForm):
         treatment = data.get("treatment")
         if treatment:
             self.instance.treatment_company = treatment.treatment
+        return data
+
+
+class SearchForm(forms.Form):
+    q = forms.CharField(label="Buscar", required=False, max_length=100,
+                        widget=forms.TextInput(attrs={"placeholder": "Digite para buscar…", "type": "search"}))
+
+
+class AgendaFilterForm(SearchForm):
+    date = forms.DateField(label="Semana de", required=False, widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"))
+    professional = forms.ModelChoiceField(label="Profissional", required=False, queryset=Employee.objects.none(), empty_label="Todos os profissionais")
+
+    def __init__(self, *args, company, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["professional"].queryset = Employee.objects.filter(membership__company=company).order_by("name")
+        self.fields["professional"].widget.attrs["id"] = "filter-professional"
+
+
+class FinanceFilterForm(SearchForm):
+    start = forms.DateField(label="De", required=False, widget=forms.DateInput(attrs={"type": "date"}))
+    end = forms.DateField(label="Até", required=False, widget=forms.DateInput(attrs={"type": "date"}))
+
+    def clean(self):
+        data = super().clean()
+        if data.get("start") and data.get("end") and data["start"] > data["end"]:
+            raise forms.ValidationError("A data final deve ser igual ou posterior à data inicial.")
         return data

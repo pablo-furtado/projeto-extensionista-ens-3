@@ -1,0 +1,8 @@
+{% extends 'chorompo/base.html' %}
+{% block title %}{{ package.name }} | Chorompo{% endblock %}
+{% block content %}
+{% include 'chorompo/treatments/nav.html' %}
+<section class="page-heading"><span class="eyebrow">PACOTE #{{ package.pk }} · {{ package.patient.name }}</span><h1>{{ package.name }}</h1><p>Compra registrada em {{ package.created_at|date:"d/m/Y H:i" }}.</p></section>
+<div class="session-summary"><div><span>Tratamentos</span><strong>{{ treatments|length }}</strong></div><div><span>Sessões compradas</span><strong>{{ total_sessions }}</strong></div><div><span>Total do pacote</span><strong>R$ {{ total|floatformat:2 }}</strong></div></div>
+<section class="form-card"><h2>Tratamentos incluídos</h2><div class="table-scroll"><table><thead><tr><th>Tratamento</th><th>Sessões realizadas</th><th>Desconto</th><th>Subtotal</th><th>Acompanhar</th></tr></thead><tbody>{% for treatment in treatments %}<tr><td>{{ treatment.name }}</td><td>{{ treatment.used_count }} de {{ treatment.qty_sessions }}</td><td>{{ treatment.discount_percentage|floatformat:2 }}%</td><td>R$ {{ treatment.price|floatformat:2 }}</td><td><a href="{% url 'chorompo:treatment_detail' treatment.pk %}">Ver sessões</a></td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

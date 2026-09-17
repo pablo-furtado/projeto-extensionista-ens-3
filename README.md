@@ -33,12 +33,26 @@ O cadastro de funcionário cria seu usuário, perfil de acesso e `Employee`, sem
 
 | Perfil | Acesso |
 | --- | --- |
-| Administrador | Pacientes, tratamentos, agenda e funcionários |
+| Administrador | Pacientes, tratamentos, agenda, funcionários e financeiro |
 | Recepção | Pacientes e agenda |
 | Profissional | Pacientes, tratamentos e agenda |
-| Financeiro | Nenhum módulo base liberado nesta versão |
+| Financeiro | Visão financeira |
+
+## Interface e gestão
+
+- Painel com indicadores reais, menu lateral e layout adaptado para celular.
+- Busca por nome/identificação em pacientes e funcionários, e por nome em catálogo e aquisições. A paginação mantém os filtros.
+- Edição de pacientes e dos dados pessoais dos funcionários pela ação **Editar**. O perfil de acesso do funcionário é preservado; o catálogo mantém sua edição existente.
+- Agenda semanal em `/plataforma/agenda/`, com busca, seleção de semana e profissional, criação e reagendamento. Após salvar, a agenda abre na semana escolhida. A remoção exige confirmação e POST com CSRF; libera sessões não realizadas e preserva evoluções clínicas. Atendimentos realizados não podem ser reagendados.
+- Financeiro em `/plataforma/financeiro/`, para administradores e perfil Financeiro: valores de vendas registradas, ticket médio, aquisições, sessões vendidas, gráfico mensal e listagem com busca e período. Os indicadores usam os totais históricos das aquisições, incluindo inativas. Não representam recebimentos nem saldo em caixa, pois não há registro de pagamentos nesta versão.
+
+Essas melhorias não exigem novas migrações de banco de dados.
 
 ## Catálogo, aquisições e acompanhamento
+
+Na sidebar, **Configurações** reúne funcionários e catálogo da clínica em um grupo expansível, filtrado pelas permissões do usuário. O botão **Cadastro de tratamentos** fica dentro do catálogo. A listagem de tratamentos dos pacientes abre uma página própria de aquisição pelo botão **Novo tratamento do paciente**, em `/plataforma/tratamentos/pacientes/novo/`. Pacientes, funcionários e agenda continuam usando janelas modais para criar e editar registros. As URLs de edição também continuam acessíveis como páginas independentes.
+
+Na aquisição, o botão **Adicionar tratamento** permite montar um pacote para um paciente com até 20 tratamentos diferentes. Cada item possui quantidade de sessões e desconto próprios. Um `TreatmentPackage` agrupa a compra, e cada item continua sendo um `Treatment` com suas próprias sessões e evoluções. O resumo do pacote mostra o total consolidado e os subtotais. Se algum item falhar, nenhuma parte do pacote é salva. Compras individuais anteriores permanecem disponíveis.
 
 - `TreatmentCompany`: catálogo em `/plataforma/tratamentos/`, com criação e edição de nome, descrição, duração, preço por sessão, custos fixo e variável por sessão e desconto máximo (0 a 100%).
 - `Treatment`: aquisição de um item do catálogo por um paciente em `/plataforma/tratamentos/pacientes/`. Guarda o nome e a descrição adquiridos, quantidade, desconto e valor total no momento da aquisição. Alterações posteriores no catálogo não mudam essas aquisições. O total é preço por sessão × quantidade, descontado o percentual informado, com arredondamento para centavos.

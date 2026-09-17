@@ -179,7 +179,23 @@ class EvolutionOfTreatment(models.Model):
                 raise ValidationError({"employee": "Selecione um profissional ativo desta clínica."})
 
 
+class TreatmentPackage(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.PROTECT, related_name="treatment_packages")
+    patient = models.ForeignKey(Patient, on_delete=models.PROTECT, related_name="treatment_packages", verbose_name="Paciente")
+    name = models.CharField("Nome do pacote", max_length=100, default="Pacote de tratamentos")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def total_price(self):
+        return self.treatments.aggregate(total=models.Sum("price"))["total"] or 0
+
+    def clean(self):
+        if self.patient_id and self.patient.company_id != self.company_id:
+            raise ValidationError({"patient": "Selecione um paciente desta clínica."})
+
+
 class Treatment(models.Model):
+    package = models.ForeignKey(TreatmentPackage, on_delete=models.PROTECT, related_name="treatments", null=True, blank=True, verbose_name="Pacote de compra")
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="treatments")
     name = models.CharField("Nome do tratamento", max_length=100)
     description = models.TextField("Descrição", blank=True)
@@ -215,6 +231,8 @@ class Treatment(models.Model):
             errors["patient"] = "Selecione um paciente desta clínica."
         if self.treatment_id and self.treatment.company_id != self.company_id:
             errors["treatment"] = "Selecione um tratamento do catálogo desta clínica."
+        if self.package_id and (self.package.company_id != self.company_id or self.package.patient_id != self.patient_id):
+            errors["package"] = "O pacote deve pertencer ao mesmo paciente e clínica."
         if errors:
             raise ValidationError(errors)
 

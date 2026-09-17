@@ -2,9 +2,10 @@
 * { box-sizing: border-box; }
 body { margin: 0; background: #f5f7f3; color: var(--ink); font-family: "Segoe UI", Arial, sans-serif; }
 .site-header { max-width: 1200px; margin: auto; padding: 32px 40px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-.brand { color: var(--ink); font-size: 29px; font-weight: 750; letter-spacing: -1.2px; text-decoration: none; display: flex; align-items: center; }
-.brand-icon { display: inline-grid; place-items: center; background: var(--green); color: white; width: 36px; height: 36px; border-radius: 11px; margin-right: 10px; font-size: 30px; font-weight: 400; }
-.brand-dot { color: #75a66b; }
+.brand { display: block; position: relative; width: 220px; height: 72px; overflow: hidden; flex-shrink: 0; }
+/* Frame the supplied thumbnail's logo without changing the source image. */
+.brand-image { position: absolute; width: 100%; max-width: none; height: auto; left: 50%; top: 50%; transform: translate(-51%, -51%); }
+@media (max-width: 680px) { .brand { width: 175px; height: 58px; } }
 .header-caption { font-size: 13px; color: var(--muted); }
 .layout { max-width: 1200px; margin: 34px auto 55px; padding: 0 40px; display: grid; grid-template-columns: 1fr 1.1fr; align-items: center; gap: 80px; }
 .intro { position: relative; padding: 20px 0; }

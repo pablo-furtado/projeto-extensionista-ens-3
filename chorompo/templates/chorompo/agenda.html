@@ -1,0 +1,15 @@
+{% extends 'chorompo/base.html' %}
+{% block title %}Agenda | Chorompo{% endblock %}
+{% block content %}
+<section class="page-heading heading-actions"><div><span class="eyebrow">{{ company.name }} · ORGANIZAÇÃO</span><h1>Agenda da clínica</h1><p>Uma semana de cuidado, organizada em um só lugar.</p></div><a href="#create-record-modal" class="primary-button" data-modal-open="create-record-modal">+ Novo agendamento</a></section>
+{% include 'chorompo/includes/filters.html' %}
+<section class="form-card calendar-card">
+    <div class="calendar-toolbar"><div><h2>{{ start|date:'d M' }} — {{ end|date:'d M Y' }}</h2><p>{{ appointment_count }} atendimento{{ appointment_count|pluralize:'s' }} nesta seleção</p></div><div class="calendar-navigation"><a class="secondary-button" href="?{{ previous }}" aria-label="Semana anterior">←</a><a class="secondary-button" href="{% url 'chorompo:appointments' %}">Hoje</a><a class="secondary-button" href="?{{ next }}" aria-label="Próxima semana">→</a></div></div>
+    <div class="week-grid">
+    {% for day in days %}<section class="calendar-day {% if day.date == today %}is-today{% endif %}" aria-label="{{ day.date|date:'l, d/m' }}"><div class="day-heading"><span>{{ day.date|date:'D' }}</span><strong>{{ day.date|date:'d' }}</strong>{% if day.date == today %}<small>Hoje</small>{% endif %}</div>
+        {% for appointment in day.appointments %}<article class="appointment-card"><time datetime="{{ appointment.starts_at|date:'c' }}">{{ appointment.starts_at|date:'H:i' }}</time><h3>{{ appointment.patient.name }}</h3><p>{{ appointment.treatment_company.name }}</p><p>{{ appointment.professional.name }}</p>{% if not appointment.session_id %}<p>Agendamento anterior ao controle de sessões</p>{% endif %}{% if appointment.session.session_held %}<span class="status-badge status-completed">Realizado</span>{% endif %}<div class="appointment-actions">{% if not appointment.session.session_held %}<a href="{% url 'chorompo:appointment_edit' appointment.pk %}" data-modal-edit>Editar</a>{% endif %}<a href="{% url 'chorompo:appointment_remove' appointment.pk %}">Remover</a></div></article>{% empty %}<p class="day-empty">Sem agendamentos</p>{% endfor %}
+    </section>{% endfor %}
+    </div>
+</section>
+{% include 'chorompo/includes/create_modal.html' %}
+{% endblock %}

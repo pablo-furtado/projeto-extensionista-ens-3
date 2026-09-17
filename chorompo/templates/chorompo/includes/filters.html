@@ -1,0 +1,5 @@
+<form method="get" class="filter-bar" role="search">
+    {% for field in filters %}<div {% if field.name == 'q' %}class="search-field"{% endif %}>{{ field.label_tag }}{{ field }}{% for error in field.errors %}<p class="field-error">{{ error }}</p>{% endfor %}</div>{% endfor %}
+    <button type="submit" class="compact-button">Filtrar</button><a class="subtle-link" href="{{ request.path }}">Limpar</a>
+    {% if filters.non_field_errors %}<div class="field-error">{{ filters.non_field_errors }}</div>{% endif %}
+</form>

@@ -1,4 +1,7 @@
 <nav class="treatment-nav" aria-label="Gestão de tratamentos">
+    {% if treatment_tab == 'catalog' or treatment_tab == 'manage' %}
     <a href="{% url 'chorompo:treatments' %}" {% if treatment_tab == 'catalog' %}aria-current="page"{% endif %}>Catálogo da clínica</a>
+    {% else %}
     <a href="{% url 'chorompo:treatment_purchases' %}" {% if treatment_tab == 'purchases' %}aria-current="page"{% endif %}>Tratamentos dos pacientes</a>
+    {% endif %}
 </nav>

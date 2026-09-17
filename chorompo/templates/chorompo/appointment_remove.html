@@ -1,0 +1,5 @@
+{% extends 'chorompo/base.html' %}
+{% block title %}Remover agendamento | Chorompo{% endblock %}
+{% block content %}
+<section class="form-card narrow-card"><span class="eyebrow">AGENDA</span><h1>Remover agendamento?</h1><p><strong>{{ appointment.patient.name }}</strong><br>{{ appointment.starts_at|date:'d/m/Y' }} às {{ appointment.starts_at|date:'H:i' }} · {{ appointment.professional.name }}</p><p>A sessão ficará disponível para um novo agendamento caso ainda não tenha sido realizada. O histórico clínico será mantido.</p><form method="post">{% csrf_token %}<div class="form-actions"><a class="secondary-button" href="{% url 'chorompo:appointments' %}">Voltar</a><button type="submit" class="compact-button danger-button">Remover agendamento</button></div></form></section>
+{% endblock %}

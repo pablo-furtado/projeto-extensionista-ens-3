@@ -2,6 +2,8 @@
 {% block title %}Sua clínica | Chorompo{% endblock %}
 {% block content %}
 <section class="page-heading"><span class="eyebrow">{{ company.name }}</span><h1>Seu espaço para cuidar da gestão.</h1><p>Escolha um módulo para começar o dia.</p></section>
+<div class="stats-grid">{% for stat in stats %}<article class="stat-card"><span>{{ stat.label }}</span><strong>{{ stat.value }}</strong><small>Visão atual da clínica</small></article>{% endfor %}</div>
+<div class="section-title"><h2>Seu dia começa aqui</h2><span class="status-badge">{{ today|date:"d F Y" }}</span></div>
 <div class="module-grid">
     {% for module in modules %}
         <a class="module-card" href="{% url module.url %}"><span class="module-icon" aria-hidden="true">{{ module.icon }}</span><h2>{{ module.title }}</h2><p>{{ module.description }}</p><span class="module-link">Acessar módulo →</span></a>

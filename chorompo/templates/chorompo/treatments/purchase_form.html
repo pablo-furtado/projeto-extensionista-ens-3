@@ -1,0 +1,26 @@
+{% extends 'chorompo/base.html' %}
+{% load static %}
+{% block title %}Novo tratamento do paciente | Chorompo{% endblock %}
+{% block content %}
+{% include 'chorompo/treatments/nav.html' %}
+<div class="purchase-form-page">
+    <section class="form-card">
+        <h2>Montar pacote de compra</h2>
+        <p class="form-description">Escolha o paciente e adicione até 20 tratamentos. Defina a quantidade de sessões e o desconto de cada um.</p>
+        <form action="{% url 'chorompo:treatment_purchase_create' %}" method="post" novalidate id="package-form">
+            {% csrf_token %}{% include 'chorompo/includes/fields.html' %}
+            {{ formset.management_form }}
+            {% for error in formset.non_form_errors %}<p class="error-summary" role="alert">{{ error }}</p>{% endfor %}
+            <div id="package-items">
+                {% for item in formset %}<fieldset class="package-item"><legend>Tratamento do pacote</legend>{% include 'chorompo/includes/fields.html' with form=item %}</fieldset>{% endfor %}
+            </div>
+            <template id="package-empty-item"><fieldset class="package-item"><legend>Tratamento do pacote</legend>{% include 'chorompo/includes/fields.html' with form=formset.empty_form %}</fieldset></template>
+            <button type="button" id="add-package-item" hidden>+ Adicionar tratamento</button>
+            <p class="help-text">Marque “Remover do pacote” para desconsiderar um item. O total será a soma dos tratamentos, com seus descontos.</p>
+            <button type="submit">Registrar pacote <span aria-hidden="true">→</span></button>
+        </form>
+        <script src="{% static 'chorompo/js/treatment_package.js' %}" defer></script>
+    </section>
+<p><a href="{% url 'chorompo:treatment_purchases' %}">Voltar aos tratamentos dos pacientes</a></p>
+</div>
+{% endblock %}

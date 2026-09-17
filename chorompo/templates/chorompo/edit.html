@@ -1,0 +1,7 @@
+{% extends 'chorompo/base.html' %}
+{% block title %}{{ title }} | Chorompo{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ back_url }}">← Voltar à listagem</a>
+<section class="page-heading"><span class="eyebrow">{{ company.name }}</span><h1>{{ title }}</h1><p>Revise os dados e salve suas alterações.</p></section>
+<section class="form-card edit-card" id="record-editor" data-title="{{ title }}"><form method="post" action="{{ request.get_full_path }}" novalidate>{% csrf_token %}{% include 'chorompo/includes/fields.html' %}<div class="form-actions"><a href="{{ back_url }}" class="secondary-button" data-modal-cancel>Cancelar</a><button type="submit" class="compact-button">Salvar alterações →</button></div></form></section>
+{% endblock %}

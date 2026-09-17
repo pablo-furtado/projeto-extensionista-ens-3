@@ -1,6 +1,6 @@
 {% extends 'chorompo/base.html' %}
-{% block title %}Editar tratamento | Chorompo{% endblock %}
+{% block title %}{% if item %}Editar{% else %}Cadastrar{% endif %} tratamento | Chorompo{% endblock %}
 {% block content %}
 {% include 'chorompo/treatments/nav.html' %}
-<section class="form-card narrow-card"><span class="eyebrow">CATÁLOGO DA CLÍNICA</span><h1>Editar tratamento</h1><p class="form-description">A atualização será usada nas próximas aquisições. Os dados e valores já adquiridos pelos pacientes serão mantidos.</p><form method="post" novalidate>{% csrf_token %}{% include 'chorompo/includes/fields.html' %}<button type="submit">Salvar alterações <span aria-hidden="true">→</span></button></form><p class="form-footnote"><a href="{% url 'chorompo:treatments' %}">Voltar ao catálogo</a></p></section>
+<section class="form-card edit-card"><span class="eyebrow">CATÁLOGO DA CLÍNICA</span><h1>{% if item %}Editar tratamento{% else %}Cadastrar tratamento{% endif %}</h1><form method="post" novalidate>{% csrf_token %}{% include 'chorompo/includes/fields.html' %}<div class="form-actions"><a href="{% url 'chorompo:treatments' %}" class="secondary-button">Voltar ao catálogo</a><button type="submit" class="compact-button">{% if item %}Salvar alterações{% else %}Adicionar ao catálogo{% endif %}</button></div></form></section>
 {% endblock %}
