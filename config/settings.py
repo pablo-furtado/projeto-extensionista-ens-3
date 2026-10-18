@@ -136,7 +136,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
 
 LOGIN_URL = 'chorompo:login'
 LOGIN_REDIRECT_URL = 'chorompo:dashboard'
@@ -156,4 +155,5 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'Chorompo <noreply@chorompo
 
 STATIC_URL = "/static/"
 
-STATIC_ROOT = BASE_DIR / "staticfiles"
+
+STATIC_ROOT = "/var/www/chorompo/static"
