@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .forms import AppointmentForm
-from .models import Appointment, Company, CompanyMembership, Employee, EvolutionOfTreatment, Patient, Treatment, TreatmentCompany, TreatmentPackage, TreatmentSession
+from .models import Appointment, Company, CompanyMembership, Employee, EvolutionOfTreatment, Floor, Room, Patient, Treatment, TreatmentCompany, TreatmentPackage, TreatmentSession
 from .treatment_services import acquire_treatment, record_evolution
 
 
@@ -28,7 +28,7 @@ class TreatmentFlowTests(TestCase):
         response = self.client.get(reverse("chorompo:treatments"))
         self.assertEqual(response.context["active_module"], "treatment_catalog")
         self.assertNotIn("employees", [item["key"] for item in response.context["modules"]])
-        self.assertEqual({item["key"] for item in response.context["settings_modules"]}, {"employees", "treatment_catalog"})
+        self.assertEqual({item["key"] for item in response.context["settings_modules"]}, {"employees", "treatment_catalog", "agenda_settings"})
         self.assertContains(response, 'class="nav-settings" open')
         self.assertContains(response, reverse("chorompo:treatment_company_create"))
         self.assertNotContains(self.client.get(reverse("chorompo:treatment_purchases")), reverse("chorompo:treatment_company_create"))
@@ -137,6 +137,8 @@ class TreatmentFlowTests(TestCase):
         cls.foreign_patient = Patient.objects.create(company=cls.other, name="Paciente confidencial", birth_date="2000-01-01", cpf="33344455566", cep="78000000", sex="F", phone_number="65999999999")
         cls.catalog = TreatmentCompany.objects.create(company=cls.company, name="Fisioterapia", description="Atendimento individual", price=Decimal("100.00"), max_discount_percentage=Decimal("10.00"))
         cls.foreign_catalog = TreatmentCompany.objects.create(company=cls.other, name="Catálogo confidencial", price=Decimal("100.00"))
+        cls.floor = Floor.objects.create(company=cls.company, name="Térreo")
+        cls.room = Room.objects.create(company=cls.company, floor=cls.floor, name="Sala 1", opens_at="08:00", closes_at="18:00")
 
     def setUp(self):
         self.client.force_login(self.user)
@@ -327,7 +329,7 @@ class TreatmentFlowTests(TestCase):
     def test_booking_does_not_consume_session_and_cannot_be_duplicated(self):
         treatment = self.purchase()
         session = treatment.sessions.first()
-        data = {"patient": self.patient.pk, "treatment": treatment.pk, "session": session.pk, "professional": self.employee.pk, "starts_at": "2027-01-01T10:00"}
+        data = {"patient": self.patient.pk, "treatment": treatment.pk, "session": session.pk, "professional": self.employee.pk, "starts_at": "2027-01-01T10:00", "ends_at": "2027-01-01T10:30", "room": self.room.pk}
         response = self.client.post(reverse("chorompo:appointments"), data)
         self.assertRedirects(response, reverse("chorompo:appointments") + "?date=2027-01-01")
         self.assertEqual(treatment.used_sessions, 0)
@@ -349,7 +351,7 @@ class TreatmentFlowTests(TestCase):
         Appointment.objects.create(company=self.company, patient=self.patient, treatment_company=self.catalog, professional=self.employee, starts_at=timezone.now())
         response = self.client.get(reverse("chorompo:appointments"))
         self.assertContains(response, "Fisioterapia")
-        self.assertContains(response, "Agendamento anterior ao controle de sessões")
+        self.assertContains(response, "Sem sala definida")
 
     def test_posts_require_csrf(self):
         session = self.purchase().sessions.first()

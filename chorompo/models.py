@@ -237,22 +237,132 @@ class Treatment(models.Model):
             raise ValidationError(errors)
 
 
+class Floor(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="floors")
+    name = models.CharField("Nome do piso", max_length=80)
+    is_active = models.BooleanField("Ativo", default=True)
+
+    class Meta:
+        ordering = ["name", "pk"]
+        constraints = [models.UniqueConstraint(fields=["company", "name"], name="unique_company_floor")]
+
+    def __str__(self):
+        return self.name
+
+
+class Room(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="rooms")
+    floor = models.ForeignKey(Floor, on_delete=models.PROTECT, related_name="rooms", verbose_name="Piso")
+    name = models.CharField("Nome da sala", max_length=80)
+    opens_at = models.TimeField("Abertura")
+    closes_at = models.TimeField("Encerramento")
+    color = models.CharField("Cor de identificação", max_length=7, default="#176f60")
+    is_active = models.BooleanField("Ativa", default=True)
+
+    class Meta:
+        ordering = ["floor__name", "name", "pk"]
+        constraints = [
+            models.UniqueConstraint(fields=["floor", "name"], name="unique_floor_room"),
+            models.CheckConstraint(condition=models.Q(closes_at__gt=models.F("opens_at")), name="room_positive_hours"),
+        ]
+
+    def __str__(self):
+        return f"{self.floor.name} · {self.name}"
+
+    def clean(self):
+        import re
+        if self.floor_id and self.floor.company_id != self.company_id:
+            raise ValidationError({"floor": "Selecione um piso desta clínica."})
+        if self.opens_at and self.closes_at and self.opens_at >= self.closes_at:
+            raise ValidationError({"closes_at": "O encerramento deve ser após a abertura, no mesmo dia."})
+        if not re.fullmatch(r"#[0-9a-fA-F]{6}", self.color or ""):
+            raise ValidationError({"color": "Escolha uma cor válida."})
+
+
+class RoomBlock(models.Model):
+    class Recurrence(models.TextChoices):
+        ONCE = "ONCE", "Somente neste período"
+        DAILY = "DAILY", "Todos os dias"
+        WEEKLY = "WEEKLY", "Dias da semana"
+
+    room = models.ForeignKey(Room, on_delete=models.PROTECT, related_name="blocks", verbose_name="Sala")
+    starts_at = models.DateTimeField("Início")
+    ends_at = models.DateTimeField("Término")
+    reason = models.CharField("Motivo", max_length=160)
+    is_active = models.BooleanField("Bloqueio ativo", default=True)
+    recurrence = models.CharField("Repetir bloqueio", max_length=10, choices=Recurrence.choices, default=Recurrence.ONCE)
+    weekdays = models.JSONField("Dias da semana", default=list, blank=True)
+    repeat_until = models.DateField("Repetir até", null=True, blank=True)
+
+    class Meta:
+        ordering = ["starts_at"]
+        constraints = [models.CheckConstraint(condition=models.Q(ends_at__gt=models.F("starts_at")), name="block_positive_duration")]
+
+    def clean(self):
+        super().clean()
+        if self.starts_at and self.ends_at and self.ends_at <= self.starts_at:
+            raise ValidationError({"ends_at": "Informe um término após o início."})
+        if not isinstance(self.weekdays, list) or any(type(day) is not int or day not in range(7) for day in self.weekdays):
+            raise ValidationError({"weekdays": "Selecione dias da semana válidos."})
+        if self.recurrence == self.Recurrence.WEEKLY and not self.weekdays:
+            raise ValidationError({"weekdays": "Selecione pelo menos um dia da semana."})
+        if self.starts_at and self.ends_at:
+            start, end = timezone.localtime(self.starts_at), timezone.localtime(self.ends_at)
+            if self.recurrence != self.Recurrence.ONCE:
+                if start.date() != end.date():
+                    raise ValidationError({"ends_at": "Para repetir o bloqueio, início e término devem estar no mesmo dia."})
+                if self.repeat_until and self.repeat_until < start.date():
+                    raise ValidationError({"repeat_until": "A data final deve ser igual ou posterior ao início da repetição."})
+            if self.is_active and self.room_id:
+                from .scheduling import block_overlaps
+                records = Appointment.objects.filter(room_id=self.room_id, canceled_at__isnull=True, ends_at__gt=self.starts_at)
+                if self.recurrence == self.Recurrence.ONCE:
+                    records = records.filter(starts_at__lt=self.ends_at)
+                elif self.repeat_until:
+                    records = records.filter(starts_at__date__lte=self.repeat_until)
+                for booking in records.iterator():
+                    if block_overlaps(self, booking.starts_at, booking.ends_at):
+                        raise ValidationError(f"Há atendimento em {timezone.localtime(booking.starts_at):%d/%m/%Y às %H:%M}. Reagende ou cancele o atendimento antes de bloquear a sala.")
+
+    @property
+    def repetition_label(self):
+        names = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
+        if self.recurrence == self.Recurrence.WEEKLY:
+            return ", ".join(names[day] for day in sorted(self.weekdays))
+        return self.get_recurrence_display()
+
+
 class Appointment(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="appointments")
     patient = models.ForeignKey(Patient, on_delete=models.PROTECT, related_name="appointments", verbose_name="Paciente")
-    treatment_company = models.ForeignKey(TreatmentCompany, on_delete=models.PROTECT, related_name="appointments", verbose_name="Tratamento do catálogo")
+    treatment_company = models.ForeignKey(TreatmentCompany, on_delete=models.PROTECT, related_name="appointments", verbose_name="Tratamento do catálogo", null=True, blank=True)
     treatment = models.ForeignKey(Treatment, on_delete=models.PROTECT, related_name="appointments", verbose_name="Tratamento adquirido", null=True, blank=True)
     session = models.OneToOneField(TreatmentSession, on_delete=models.PROTECT, related_name="appointment", verbose_name="Sessão adquirida", null=True, blank=True)
     professional = models.ForeignKey(Employee, on_delete=models.PROTECT, related_name="appointments", verbose_name="Profissional")
     starts_at = models.DateTimeField("Data e horário")
+    ends_at = models.DateTimeField("Término")
+    room = models.ForeignKey(Room, on_delete=models.PROTECT, related_name="appointments", verbose_name="Sala", null=True, blank=True)
+    canceled_at = models.DateTimeField(null=True, blank=True)
+    canceled_session = models.ForeignKey(TreatmentSession, on_delete=models.PROTECT, related_name="canceled_appointments", null=True, blank=True)
     notes = models.TextField("Observações", blank=True)
 
     class Meta:
         ordering = ["starts_at"]
+        constraints = [models.CheckConstraint(condition=models.Q(ends_at__gt=models.F("starts_at")) | models.Q(ends_at__isnull=True), name="appointment_positive_duration")]
+        indexes = [models.Index(fields=["company", "starts_at"]), models.Index(fields=["room", "starts_at", "ends_at"])]
+
+    def save(self, *args, **kwargs):
+        # Retain compatibility with older integrations that only supplied a start.
+        if self.starts_at and not self.ends_at:
+            from .scheduling import inferred_end
+            self.ends_at = inferred_end(self)
+        super().save(*args, **kwargs)
 
     def clean(self):
         super().clean()
         errors = {}
+        from .scheduling import validate_appointment
+        validate_appointment(self)
         if self.patient_id and self.patient.company_id != self.company_id:
             errors["patient"] = "Selecione um paciente desta clínica."
         if self.treatment_id and self.treatment.company_id != self.company_id:

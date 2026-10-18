@@ -58,16 +58,19 @@ class ManagementTests(TestCase):
         url = reverse("chorompo:appointment_edit", args=[appointment.pk])
         response = self.client.post(url, {"patient": self.patient.pk, "treatment": self.purchase.pk,
                                           "session": self.session.pk, "professional": self.employee.pk,
-                                          "starts_at": "2027-03-15T14:30", "notes": "Reagendado"})
+                                          "starts_at": "2027-03-15T14:30", "ends_at": "2027-03-15T15:00", "room": self.room.pk, "notes": "Reagendado"})
         self.assertRedirects(response, reverse("chorompo:appointments") + "?date=2027-03-15")
         appointment.refresh_from_db()
         self.assertEqual(appointment.notes, "Reagendado")
         remove = reverse("chorompo:appointment_remove", args=[appointment.pk])
-        self.assertContains(self.client.get(remove), "Remover agendamento?")
+        self.assertContains(self.client.get(remove), "Cancelar agendamento?")
         self.assertTrue(Appointment.objects.filter(pk=appointment.pk).exists())
-        self.assertRedirects(self.client.post(remove), reverse("chorompo:appointments"))
-        self.assertFalse(Appointment.objects.filter(pk=appointment.pk).exists())
-        self.assertIn(self.session, AppointmentForm(company=self.company).fields["session"].queryset)
+        self.assertRedirects(self.client.post(remove), reverse("chorompo:appointments") + "?date=2027-03-15")
+        appointment.refresh_from_db()
+        self.assertIsNotNone(appointment.canceled_at)
+        self.assertIsNone(appointment.session_id)
+        self.assertEqual(appointment.canceled_session_id, self.session.pk)
+        self.assertIn(self.session, AppointmentForm(company=self.company, initial={"treatment": self.purchase.pk, "session": self.session.pk}).fields["session"].queryset)
 
     def test_removal_preserves_clinical_history_and_requires_csrf(self):
         appointment = self.booking()

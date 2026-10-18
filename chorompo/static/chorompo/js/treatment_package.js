@@ -17,7 +17,8 @@
         items.insertAdjacentHTML('beforeend', template.innerHTML.replaceAll('__prefix__', String(index)));
         total.value = index + 1;
         update();
-        items.lastElementChild.querySelector('select').focus();
+        items.dispatchEvent(new CustomEvent('record:loaded', {bubbles: true}));
+        (items.lastElementChild.querySelector('.search-combobox input') || items.lastElementChild.querySelector('select')).focus();
     });
     items.addEventListener('change', update);
     update();

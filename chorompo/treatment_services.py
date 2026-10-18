@@ -3,7 +3,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 
-from .models import Appointment, CompanyMembership, EvolutionOfTreatment, Treatment, TreatmentCompany, TreatmentPackage, TreatmentSession
+from .models import Appointment, Company, CompanyMembership, EvolutionOfTreatment, Room, Treatment, TreatmentCompany, TreatmentPackage, TreatmentSession
 
 
 @transaction.atomic
@@ -73,13 +73,20 @@ def record_evolution(*, session, employee, date, notes, uses_session):
 
 @transaction.atomic
 def save_appointment(appointment):
-    # Use the same lock order as session consumption to avoid scheduling a used session.
-    treatment = Treatment.objects.select_for_update().get(pk=appointment.treatment_id, company=appointment.company)
-    session = TreatmentSession.objects.select_for_update().get(pk=appointment.session_id, treatment=treatment)
-    if Appointment.objects.filter(session=session).exclude(pk=appointment.pk).exists():
-        raise ValidationError("Esta sessão já possui um agendamento.")
-    appointment.treatment = treatment
-    appointment.session = session
+    Company.objects.select_for_update().get(pk=appointment.company_id)
+    if appointment.room_id:
+        appointment.room = Room.objects.select_related("floor").get(pk=appointment.room_id, company_id=appointment.company_id)
+    if appointment.pk:
+        stored = Appointment.objects.select_for_update().get(pk=appointment.pk, company_id=appointment.company_id)
+        if stored.canceled_at or (stored.session_id and stored.session.session_held):
+            raise ValidationError("Este agendamento foi cancelado ou realizado. Atualize a agenda.")
+    if appointment.treatment_id:
+        appointment.treatment = Treatment.objects.select_for_update().get(pk=appointment.treatment_id, company=appointment.company)
+    if appointment.session_id:
+        session = TreatmentSession.objects.select_for_update().get(pk=appointment.session_id)
+        if Appointment.objects.filter(session=session).exclude(pk=appointment.pk).exists():
+            raise ValidationError("Esta sessão já possui um agendamento.")
+        appointment.session = session
     appointment.full_clean()
     appointment.save()
     return appointment

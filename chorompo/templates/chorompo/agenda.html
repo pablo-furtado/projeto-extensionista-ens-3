@@ -1,15 +1,41 @@
 {% extends 'chorompo/base.html' %}
-{% block title %}Agenda | Chorompo{% endblock %}
+{% block title %}Agenda diária | Chorompo{% endblock %}
 {% block content %}
-<section class="page-heading heading-actions"><div><span class="eyebrow">{{ company.name }} · ORGANIZAÇÃO</span><h1>Agenda da clínica</h1><p>Uma semana de cuidado, organizada em um só lugar.</p></div><a href="#create-record-modal" class="primary-button" data-modal-open="create-record-modal">+ Novo agendamento</a></section>
-{% include 'chorompo/includes/filters.html' %}
-<section class="form-card calendar-card">
-    <div class="calendar-toolbar"><div><h2>{{ start|date:'d M' }} — {{ end|date:'d M Y' }}</h2><p>{{ appointment_count }} atendimento{{ appointment_count|pluralize:'s' }} nesta seleção</p></div><div class="calendar-navigation"><a class="secondary-button" href="?{{ previous }}" aria-label="Semana anterior">←</a><a class="secondary-button" href="{% url 'chorompo:appointments' %}">Hoje</a><a class="secondary-button" href="?{{ next }}" aria-label="Próxima semana">→</a></div></div>
-    <div class="week-grid">
-    {% for day in days %}<section class="calendar-day {% if day.date == today %}is-today{% endif %}" aria-label="{{ day.date|date:'l, d/m' }}"><div class="day-heading"><span>{{ day.date|date:'D' }}</span><strong>{{ day.date|date:'d' }}</strong>{% if day.date == today %}<small>Hoje</small>{% endif %}</div>
-        {% for appointment in day.appointments %}<article class="appointment-card"><time datetime="{{ appointment.starts_at|date:'c' }}">{{ appointment.starts_at|date:'H:i' }}</time><h3>{{ appointment.patient.name }}</h3><p>{{ appointment.treatment_company.name }}</p><p>{{ appointment.professional.name }}</p>{% if not appointment.session_id %}<p>Agendamento anterior ao controle de sessões</p>{% endif %}{% if appointment.session.session_held %}<span class="status-badge status-completed">Realizado</span>{% endif %}<div class="appointment-actions">{% if not appointment.session.session_held %}<a href="{% url 'chorompo:appointment_edit' appointment.pk %}" data-modal-edit>Editar</a>{% endif %}<a href="{% url 'chorompo:appointment_remove' appointment.pk %}">Remover</a></div></article>{% empty %}<p class="day-empty">Sem agendamentos</p>{% endfor %}
-    </section>{% endfor %}
-    </div>
+<section class="page-heading heading-actions agenda-heading">
+<div><span class="eyebrow">{{ company.name }} · ATENDIMENTOS</span><h1>Agenda diária</h1><p>Encontre um horário livre e agende com um clique.</p></div>
+<div class="agenda-actions">{% if membership.role == 'ADMIN' %}<a class="secondary-button" href="{% url 'chorompo:agenda_settings' %}">Salas e bloqueios</a>{% endif %}<a class="primary-button" href="{% url 'chorompo:appointment_create' %}" data-modal-edit>+ Agendar</a></div>
 </section>
-{% include 'chorompo/includes/create_modal.html' %}
+<section class="daily-agenda" aria-label="Agenda diária" data-date="{{ selected|date:'Y-m-d' }}" data-start-minute="{{ timeline_start }}">
+<form hidden id="agenda-move-token">{% csrf_token %}</form><p class="agenda-move-status" role="status" hidden></p>
+<div class="agenda-topbar">
+<div class="calendar-navigation"><a class="secondary-button" href="?{{ previous }}" aria-label="Dia anterior">←</a><a class="secondary-button" href="{% url 'chorompo:appointments' %}">Hoje</a><a class="secondary-button" href="?{{ next }}" aria-label="Dia seguinte">→</a></div>
+<div class="agenda-date"><h2>{{ selected|date:'l, d \d\e F' }}</h2><span>{{ selected|date:'Y' }} · {{ appointment_count }} atendimento{{ appointment_count|pluralize:'s' }} · {{ block_count }} bloqueio{{ block_count|pluralize:'s' }}</span></div><span class="daily-view-label">◷ Visualização diária</span>
+</div>
+<form class="agenda-filters" method="get" aria-label="Filtrar agenda">
+{% for field in filters %}{% if field.name != 'q' and field.name != 'professional' %}<div class="agenda-filter"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}</div>{% endif %}{% endfor %}
+<details class="agenda-extra-filters" open {% if filters.q.value or filters.professional.value or filters.errors %}data-keep-open{% endif %}><summary>Buscar paciente ou profissional</summary><div class="extra-filter-fields">{% for field in filters %}{% if field.name == 'q' or field.name == 'professional' %}<div class="agenda-filter"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}</div>{% endif %}{% endfor %}</div></details>
+<button class="compact-button" type="submit">Aplicar</button><a href="?date={{ selected|date:'Y-m-d' }}" class="subtle-link">Limpar</a>
+</form>
+<div class="agenda-legend"><span><i class="legend-free"></i>Livre · clique para agendar</span><span><i class="legend-booked"></i>Ocupado</span><span><i class="legend-blocked"></i>Bloqueado / fechado</span>{% if has_search %}<span>Os demais atendimentos ficam atenuados para manter a ocupação visível.</span>{% endif %}<span class="room-total">{{ room_count }} sala{{ room_count|pluralize:'s' }}</span></div>
+{% if not appointment_count %}<p class="agenda-empty-note" role="status">{% if has_search %}Nenhum atendimento corresponde à busca. A ocupação das salas continua visível.{% else %}Nenhum atendimento nesta data e seleção. Clique em um horário livre para começar.{% endif %}</p>{% endif %}
+{% if columns %}
+<div class="timeline-scroll" tabindex="0" role="region" aria-label="Horários e salas. Role para ver o dia completo e as demais salas.">
+<div class="timeline-grid" style="--rooms: {{ columns|length }}; --timeline-height: {{ timeline_height }}px">
+<div class="timeline-corner">Horário</div>
+{% for column in columns %}<header class="room-heading" style="--room-color: {{ column.room.color|default:'#667b77' }}"><span class="room-floor">{{ column.room.floor.name|default:'Histórico' }}{% if column.room and not column.room.floor.is_active %} · Inativo{% endif %}</span><strong><i></i>{{ column.room.name|default:'Sem sala definida' }}{% if column.room and not column.room.is_active %} · Inativa{% endif %}</strong><small>{% if column.room %}{{ column.room.opens_at|time:'H:i' }} – {{ column.room.closes_at|time:'H:i' }}{% else %}Edite para definir uma sala{% endif %}</small></header>{% endfor %}
+<div class="time-axis">{% for tick in ticks %}<time style="top: {{ tick.top }}px">{{ tick.label }}</time>{% endfor %}</div>
+{% for column in columns %}<section class="room-timeline" data-room="{{ column.room.pk|default:'' }}" data-room-label="{{ column.room }}" aria-label="{{ column.room|default:'Agendamentos sem sala' }}" style="--room-color: {{ column.room.color|default:'#667b77' }}">
+{% for slot in column.slots %}<a class="free-slot" style="top: {{ slot.top }}px; height: {{ slot.height }}px" href="{{ slot.url }}" data-modal-edit aria-label="Agendar {{ selected|date:'d/m/Y' }} às {{ slot.label }} · {{ column.room }}"><span>+ {{ slot.label }}</span></a>{% endfor %}
+{% if column.closed_before %}<div class="closed-period" style="top: 0; height: {{ column.closed_before }}px"><span>Fechado</span></div>{% endif %}
+{% if column.closed_after_height %}<div class="closed-period" style="top: {{ column.closed_after_top }}px; height: {{ column.closed_after_height }}px"><span>Fechado</span></div>{% endif %}
+{% if column.room and not column.room.is_active or column.room and not column.room.floor.is_active %}<div class="closed-period" style="top: 0; height: var(--timeline-height)"><span>Sala ou piso desativado</span></div>{% endif %}
+{% for event in column.events %}{% if event.block %}
+<div class="timeline-event blocked-event" style="top: {{ event.top }}px; height: {{ event.height }}px; left: {{ event.left }}%; width: {{ event.width }}%" title="Bloqueado · {{ event.item.reason }} · {{ event.item.starts_at|date:'d/m H:i' }} a {{ event.item.ends_at|date:'d/m H:i' }}"><strong>⊘ Bloqueado · {{ event.item.starts_at|date:'H:i' }}–{{ event.item.ends_at|date:'H:i' }}</strong><span>{{ event.item.reason }}</span></div>
+{% else %}
+<a class="timeline-event booked-event {% if event.muted %}event-muted{% endif %}" style="top: {{ event.top }}px; height: {{ event.height }}px; left: {{ event.left }}%; width: {{ event.width }}%" href="{% if event.item.session.session_held %}{% url 'chorompo:session_detail' event.item.session_id %}{% else %}{% url 'chorompo:appointment_edit' event.item.pk %}{% endif %}" {% if not event.item.session.session_held %}data-modal-edit draggable="true" data-move-url="{% url 'chorompo:appointment_move' event.item.pk %}" data-start="{{ event.item.starts_at|date:'c' }}" data-end="{{ event.item.ends_at|date:'c' }}" data-room="{{ event.item.room_id|default:'' }}"{% endif %} title="{{ event.item.patient.name }} · {{ event.item.starts_at|date:'H:i' }}–{{ event.item.ends_at|date:'H:i' }} · {{ event.item.treatment_company.name|default:'Sem tratamento' }} · {{ event.item.professional.name }}">{% if not event.item.session.session_held %}<span class="drag-handle" aria-hidden="true" title="Arraste para mudar sala ou horário">⠿</span>{% endif %}<strong>{{ event.item.starts_at|date:'H:i' }}–{{ event.item.ends_at|date:'H:i' }}{% if event.item.session.session_held %} · ✓ Realizado{% endif %}</strong><b>{{ event.item.patient.name }}</b><span>{{ event.item.treatment_company.name|default:'Atendimento' }} · {{ event.item.professional.name }}</span></a>
+{% endif %}{% endfor %}
+</section>{% endfor %}
+</div></div>
+{% else %}<div class="empty-state"><h3>{% if filters.room.value or filters.floor.value %}Nenhuma sala nesta seleção{% else %}Prepare a agenda da clínica{% endif %}</h3><p>{% if membership.role == 'ADMIN' %}Cadastre um piso e as salas com seus horários de funcionamento.{% else %}Peça ao administrador para cadastrar os pisos e salas de atendimento.{% endif %}</p>{% if membership.role == 'ADMIN' %}<a class="primary-button" href="{% url 'chorompo:agenda_settings' %}">Configurar salas</a>{% endif %}</div>{% endif %}
+</section>
 {% endblock %}

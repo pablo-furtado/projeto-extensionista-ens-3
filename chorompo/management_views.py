@@ -1,4 +1,3 @@
-from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib import messages
@@ -13,49 +12,10 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from .access import clinic_required
-from .forms import AgendaFilterForm, AppointmentForm, FinanceFilterForm
-from .models import Appointment
+from .forms import AppointmentForm, FinanceFilterForm
+from .models import Appointment, Company
 from .treatment_services import save_appointment
 from .views import platform_context
-
-
-@clinic_required("appointments")
-@require_http_methods(["GET", "POST"])
-def appointments(request):
-    filters = AgendaFilterForm(request.GET, company=request.company)
-    valid = filters.is_valid()
-    selected = (filters.cleaned_data.get("date") if valid else None) or timezone.localdate()
-    # Leave enough room for week navigation even for manually entered extreme dates.
-    selected = max(timezone.datetime(1900, 1, 1).date(), min(selected, timezone.datetime(9998, 12, 1).date()))
-    start = selected - timedelta(days=selected.weekday())
-    end = start + timedelta(days=6)
-    records = request.company.appointments.select_related("patient", "professional", "treatment_company", "session")
-    records = records.filter(starts_at__date__range=(start, end))
-    if valid:
-        if filters.cleaned_data.get("q"):
-            q = filters.cleaned_data["q"]
-            records = records.filter(Q(patient__name__icontains=q) | Q(treatment_company__name__icontains=q) | Q(professional__name__icontains=q))
-        if filters.cleaned_data.get("professional"):
-            records = records.filter(professional=filters.cleaned_data["professional"])
-    else:
-        records = records.none()
-    form = AppointmentForm(request.POST if request.method == "POST" else None, company=request.company)
-    if request.method == "POST" and form.is_valid():
-        if persist_appointment(form):
-            messages.success(request, "Agendamento criado com sucesso.")
-            return redirect(reverse("chorompo:appointments") + "?date=" + timezone.localdate(form.instance.starts_at).isoformat())
-    days = [{"date": start + timedelta(days=i), "appointments": []} for i in range(7)]
-    for appointment in records:
-        days[(timezone.localdate(appointment.starts_at) - start).days]["appointments"].append(appointment)
-    params = request.GET.copy()
-    params["date"] = (start - timedelta(days=7)).isoformat()
-    previous = params.urlencode()
-    params["date"] = (start + timedelta(days=7)).isoformat()
-    return render(request, "chorompo/agenda.html", {
-        **platform_context(request), "active_module": "appointments", "form": form, "filters": filters,
-        "days": days, "start": start, "end": end, "previous": previous, "next": params.urlencode(),
-        "today": timezone.localdate(), "appointment_count": sum(len(day["appointments"]) for day in days),
-    })
 
 
 def persist_appointment(form):
@@ -73,7 +33,7 @@ def persist_appointment(form):
 @clinic_required("appointments")
 @require_http_methods(["GET", "POST"])
 def appointment_edit(request, pk):
-    appointment = get_object_or_404(Appointment, pk=pk, company=request.company)
+    appointment = get_object_or_404(Appointment, pk=pk, company=request.company, canceled_at__isnull=True)
     form = AppointmentForm(request.POST if request.method == "POST" else None, instance=appointment, company=request.company)
     if appointment.session_id and appointment.session.session_held:
         messages.error(request, "Este atendimento já foi realizado e não pode ser reagendado.")
@@ -84,6 +44,7 @@ def appointment_edit(request, pk):
     return render(request, "chorompo/edit.html", {
         **platform_context(request), "active_module": "appointments", "title": "Editar agendamento",
         "form": form, "back_url": reverse("chorompo:appointments"),
+        "appointment": appointment,
     })
 
 
@@ -93,10 +54,15 @@ def appointment_remove(request, pk):
     appointment = get_object_or_404(Appointment, pk=pk, company=request.company)
     if request.method == "POST":
         with transaction.atomic():
+            Company.objects.select_for_update().get(pk=request.company.pk)
             appointment = get_object_or_404(Appointment.objects.select_for_update(), pk=pk, company=request.company)
-            appointment.delete()
-        messages.success(request, "Agendamento removido. O histórico clínico e as sessões realizadas foram preservados.")
-        return redirect("chorompo:appointments")
+            if not appointment.canceled_at:
+                appointment.canceled_at = timezone.now()
+                appointment.canceled_session = appointment.session
+                appointment.session = None
+                appointment.save(update_fields=["canceled_at", "canceled_session", "session"])
+        messages.success(request, "Agendamento cancelado. O histórico e as sessões realizadas foram preservados.")
+        return redirect(reverse("chorompo:appointments") + "?date=" + timezone.localdate(appointment.starts_at).isoformat())
     return render(request, "chorompo/appointment_remove.html", {
         **platform_context(request), "active_module": "appointments", "appointment": appointment,
     })

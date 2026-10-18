@@ -175,6 +175,7 @@ MODULES = [
 
 
 SETTINGS_MODULES = [
+    {"key": "agenda_settings", "permission": "employees", "title": "Salas e disponibilidade", "url": "chorompo:agenda_settings", "icon": "S"},
     {"key": "employees", "permission": "employees", "title": "Funcionários", "url": "chorompo:employees", "icon": "F"},
     {"key": "treatment_catalog", "permission": "treatments", "title": "Catálogo da clínica", "url": "chorompo:treatments", "icon": "C"},
 ]
@@ -217,6 +218,9 @@ def onboarding(request):
 @clinic_required()
 @require_http_methods(["GET"])
 def dashboard(request):
+    if has_permission(request.membership, "appointments") and "overview" not in request.GET:
+        from .agenda_views import appointments
+        return appointments(request)
     today = timezone.localdate()
     stats = []
     if has_permission(request.membership, "patients"):

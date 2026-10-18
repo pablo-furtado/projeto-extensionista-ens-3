@@ -2,7 +2,7 @@ from django.urls import path
 from django.views.generic import RedirectView
 from django.contrib.auth import views as auth_views
 
-from . import management_views, treatment_views, views
+from . import agenda_views, management_views, treatment_views, views
 
 app_name = "chorompo"
 
@@ -26,7 +26,13 @@ urlpatterns = [
     path("plataforma/tratamentos/pacientes/novo/", treatment_views.purchase_create, name="treatment_purchase_create"),
     path("plataforma/tratamentos/pacientes/<int:pk>/", treatment_views.treatment_detail, name="treatment_detail"),
     path("plataforma/tratamentos/sessoes/<int:pk>/", treatment_views.session_detail, name="session_detail"),
-    path("plataforma/agenda/", management_views.appointments, name="appointments"),
+    path("plataforma/agenda/", agenda_views.appointments, name="appointments"),
+    path("plataforma/agenda/novo/", agenda_views.appointment_create, name="appointment_create"),
+    path("plataforma/agenda/<int:pk>/mover/", agenda_views.appointment_move, name="appointment_move"),
+    path("plataforma/agenda/buscar/", agenda_views.search, name="agenda_search"),
+    path("plataforma/agenda/configuracoes/", agenda_views.settings, name="agenda_settings"),
+    path("plataforma/agenda/configuracoes/<str:kind>/novo/", agenda_views.setting_edit, name="agenda_setting_create"),
+    path("plataforma/agenda/configuracoes/<str:kind>/<int:pk>/", agenda_views.setting_edit, name="agenda_setting_edit"),
     path("plataforma/agenda/<int:pk>/editar/", management_views.appointment_edit, name="appointment_edit"),
     path("plataforma/agenda/<int:pk>/remover/", management_views.appointment_remove, name="appointment_remove"),
     path("plataforma/financeiro/", management_views.finance, name="finance"),

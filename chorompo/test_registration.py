@@ -8,7 +8,7 @@ from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from .forms import AppointmentForm
-from .models import Appointment, Company, CompanyMembership, Employee, Patient, Treatment, TreatmentCompany, TreatmentSession
+from .models import Appointment, Company, CompanyMembership, Employee, Floor, Room, Patient, Treatment, TreatmentCompany, TreatmentSession
 from .registration import company_from_token, registration_token
 
 
@@ -232,11 +232,13 @@ class PlatformAccessTests(TestCase):
         self.assertFalse(Appointment.objects.exists())
 
     def test_appointment_saves_for_current_clinic(self):
+        floor = Floor.objects.create(company=self.company, name="Térreo")
+        room = Room.objects.create(company=self.company, floor=floor, name="Sala A", opens_at="08:00", closes_at="18:00")
         patient = self.patient(self.company, "Paciente A", "22233344455")
         catalog = TreatmentCompany.objects.create(company=self.company, name="Consulta")
         treatment = Treatment.objects.create(company=self.company, patient=patient, treatment=catalog, name="Consulta")
         session = TreatmentSession.objects.create(treatment=treatment, session_number=1)
-        response = self.client.post(reverse("chorompo:appointments"), {"patient": patient.pk, "treatment": treatment.pk, "session": session.pk, "professional": self.employee.pk, "starts_at": "2027-01-10T10:00"})
+        response = self.client.post(reverse("chorompo:appointments"), {"patient": patient.pk, "treatment": treatment.pk, "session": session.pk, "professional": self.employee.pk, "starts_at": "2027-01-10T10:00", "ends_at": "2027-01-10T10:30", "room": room.pk})
         self.assertRedirects(response, reverse("chorompo:appointments") + "?date=2027-01-10")
         self.assertEqual(Appointment.objects.get().company, self.company)
         self.assertContains(self.client.get(response.url), "10:00")

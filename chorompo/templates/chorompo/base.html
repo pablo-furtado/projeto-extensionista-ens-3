@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="{% static 'chorompo/css/platform.css' %}">
     <link rel="stylesheet" href="{% static 'chorompo/css/modals.css' %}">
     <link rel="stylesheet" href="{% static 'chorompo/css/navigation.css' %}">
+    <link rel="stylesheet" href="{% static 'chorompo/css/agenda.css' %}">
 </head>
 <body {% if modules and company.onboarding_completed %}class="platform-body"{% endif %}>
     <header class="site-header">
@@ -24,10 +25,10 @@
     <main class="page-shell">
         {% if modules and company.onboarding_completed %}
             <nav class="module-nav" aria-label="Módulos da clínica">
-                <span class="nav-caption">ESPAÇO DA CLÍNICA</span><a href="{% url 'chorompo:dashboard' %}" {% if not active_module %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">◈</span>Visão geral</a>
+                <span class="nav-caption">ESPAÇO DA CLÍNICA</span><a href="{% url 'chorompo:dashboard' %}?overview=1" {% if not active_module %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">◈</span>Visão geral</a>
                 {% for module in modules %}<a href="{% url module.url %}" {% if active_module == module.key %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">{{ module.icon }}</span>{{ module.title }}</a>{% endfor %}
                 {% if settings_modules %}
-                <details class="nav-settings" {% if active_module == 'employees' or active_module == 'treatment_catalog' %}open{% endif %}>
+                <details class="nav-settings" {% if active_module == 'employees' or active_module == 'treatment_catalog' or active_module == 'agenda_settings' %}open{% endif %}>
                     <summary><span class="nav-icon" aria-hidden="true">⚙</span><span>Configurações</span><span class="settings-chevron" aria-hidden="true">⌄</span></summary>
                     <div class="settings-links">{% for module in settings_modules %}<a href="{% url module.url %}" {% if active_module == module.key %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">{{ module.icon }}</span>{{ module.title }}</a>{% endfor %}</div>
                 </details>
@@ -40,5 +41,7 @@
     </main>
     <footer>Chorompo · Cuidar da gestão também é cuidar de pessoas.</footer>
 <script src="{% static 'chorompo/js/modals.js' %}" defer></script>
+<script src="{% static 'chorompo/js/agenda.js' %}" defer></script>
+<script src="{% static 'chorompo/js/agenda_drag.js' %}" defer></script>
 </body>
 </html>

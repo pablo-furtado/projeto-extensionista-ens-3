@@ -27,7 +27,7 @@ O login em `/entrar/` usa **nome de usuário e senha** escolhidos no perfil.
 
 ## Módulos base
 
-O painel em `/plataforma/` oferece listagem e cadastro de pacientes, tratamentos, agendamentos e funcionários. A agenda inicial apresenta os atendimentos em uma lista por data, no fuso `America/Cuiaba`. Para um novo agendamento, selecione o paciente, seu tratamento adquirido, uma sessão disponível e um profissional ativo da clínica. Agendar não consome a sessão.
+O painel em `/plataforma/` abre diretamente a agenda diária para os perfis com acesso à agenda, no fuso `America/Cuiaba`. A visão geral continua disponível no menu. Para agendar, clique em um horário livre e escolha o paciente; sala, início e término vêm preenchidos. O profissional continua obrigatório. Tratamento adquirido e sessão são opcionais e não são consumidos ao agendar.
 
 O cadastro de funcionário cria seu usuário, perfil de acesso e `Employee`, sem trocar a sessão do administrador. Os dados e as opções dos formulários são filtrados pela clínica vinculada ao usuário autenticado; enviar outro identificador de empresa não muda esse vínculo.
 
@@ -43,7 +43,7 @@ O cadastro de funcionário cria seu usuário, perfil de acesso e `Employee`, sem
 - Painel com indicadores reais, menu lateral e layout adaptado para celular.
 - Busca por nome/identificação em pacientes e funcionários, e por nome em catálogo e aquisições. A paginação mantém os filtros.
 - Edição de pacientes e dos dados pessoais dos funcionários pela ação **Editar**. O perfil de acesso do funcionário é preservado; o catálogo mantém sua edição existente.
-- Agenda semanal em `/plataforma/agenda/`, com busca, seleção de semana e profissional, criação e reagendamento. Após salvar, a agenda abre na semana escolhida. A remoção exige confirmação e POST com CSRF; libera sessões não realizadas e preserva evoluções clínicas. Atendimentos realizados não podem ser reagendados.
+- Agenda diária em `/plataforma/agenda/`, com linha do tempo vertical, salas em colunas, horários e cabeçalhos fixos na rolagem, navegação por data e filtros por piso/sala. Busca e filtro por profissional atenuam os demais atendimentos, mantendo a ocupação visível. O cancelamento exige confirmação e POST com CSRF; preserva o registro, a sessão original e as evoluções, liberando a sessão não realizada. Atendimentos realizados não podem ser reagendados.
 - Financeiro em `/plataforma/financeiro/`, para administradores e perfil Financeiro: valores de vendas registradas, ticket médio, aquisições, sessões vendidas, gráfico mensal e listagem com busca e período. Os indicadores usam os totais históricos das aquisições, incluindo inativas. Não representam recebimentos nem saldo em caixa, pois não há registro de pagamentos nesta versão.
 
 Essas melhorias não exigem novas migrações de banco de dados.
@@ -61,7 +61,35 @@ Na aquisição, o botão **Adicionar tratamento** permite montar um pacote para 
 
 As operações de aquisição, evolução e agendamento ficam em `chorompo/treatment_services.py`. O consumo e o agendamento bloqueiam as linhas da aquisição e da sessão dentro de transações, revalidando a disponibilidade para evitar reenvios que consumam a sessão novamente. Os formulários e as páginas restringem todos os vínculos à clínica autenticada.
 
-As migrações `0003` e `0004` preservam o catálogo antigo renomeando `Treatment` para `TreatmentCompany`. Os agendamentos anteriores mantêm seu vínculo com o catálogo em `Appointment.treatment_company`, sem inventar aquisições ou quantidades compradas. Novos agendamentos exigem também `Appointment.treatment` e `Appointment.session`. Itens antigos começam com preço zero, que pode ser atualizado em “Editar tratamento”.
+As migrações `0003` e `0004` preservam o catálogo antigo renomeando `Treatment` para `TreatmentCompany`. Os agendamentos anteriores mantêm seu vínculo com o catálogo em `Appointment.treatment_company`, sem inventar aquisições ou quantidades compradas. Tratamento e sessão são opcionais nos novos agendamentos. Itens antigos começam com preço zero, que pode ser atualizado em “Editar tratamento”.
+
+## Agenda diária e disponibilidade
+
+O administrador cadastra pisos, salas e bloqueios em **Configurações → Salas e disponibilidade** (`/plataforma/agenda/configuracoes/`). Cada sala tem piso, cor e horário diário de abertura/encerramento, no mesmo dia. Ausências, almoço, manutenção, feriados e intervalos de vários dias são registrados como bloqueios datados. Desativar pisos e salas impede novos agendamentos e mantém o histórico; salas inativas com atendimento ou bloqueio na data continuam aparecendo.
+
+No cadastro de bloqueio, **Repetir bloqueio** permite selecionar **Somente neste período**, **Todos os dias** ou **Dias da semana** (por exemplo, segunda, quarta e sexta, das 12h às 14h). A data de início define quando a regra começa; o horário final pertence ao mesmo dia nas regras recorrentes. **Repetir até** é opcional e inclusivo. A regra é armazenada uma vez, sem gerar registros infinitos, e suas ocorrências são calculadas para cada data da agenda. Novas regras e edições são rejeitadas se atingirem atendimentos já existentes. Desativar a regra libera suas ocorrências. A migração `0008` preserva bloqueios anteriores como pontuais.
+
+Atendimentos não realizados podem ser arrastados para outra sala/horário, com encaixe de 15 minutos e prévia do destino. A duração é preservada. No toque, use o marcador de arrastar no canto do cartão; o restante da agenda continua permitindo rolagem. Horários fechados, bloqueios e conflitos são revalidados no servidor; uma tentativa recusada mantém o atendimento original e explica o motivo. Alterações feitas por outra pessoa desde o carregamento da página também impedem uma movimentação desatualizada. A edição por formulário permanece acessível pelo teclado.
+
+As migrações `0006` e `0007` adicionam essa estrutura e o término dos agendamentos. O término dos registros anteriores é calculado com a duração do catálogo; na ausência de catálogo, usa 30 minutos. Não são criadas salas, pisos ou aquisições fictícias. Registros anteriores sem sala aparecem em **Sem sala definida** e devem receber uma sala ao serem editados. Para atualizar outra instalação, execute `python manage.py migrate`.
+
+O servidor valida início/término, funcionamento, bloqueios e sobreposição de sala, paciente ou profissional. Períodos adjacentes são permitidos. Agendamento, cancelamento e configuração de disponibilidade bloqueiam a linha da clínica em transação e revalidam o estado atual antes de salvar. MySQL é o banco configurado para execução; os testes isolados usam SQLite, que não valida a concorrência de locks de linha do MySQL.
+
+Os seletores pesquisam no servidor em páginas de 20 resultados, com debounce e cancelamento de requisições antigas. Pacientes mostram nascimento e telefone; tratamentos mostram a aquisição e duração. A pesquisa de tratamentos restringe os resultados às aquisições ativas do paciente, preservando o fluxo de sessões existente. Use setas/Enter para selecionar e Escape para fechar a lista. Tratamento, sessão e observações ficam em uma seção opcional. A duração sugerida só é aplicada ao clicar em **Usar duração sugerida**, preservando horários manuais.
+
+A pesquisa por nome também está disponível nos demais seletores da aplicação, incluindo pisos, salas, profissionais, filtros, perfis e campos adicionados dinamicamente aos pacotes. Esses seletores filtram as opções já autorizadas pelo formulário; pacientes, tratamentos e sessões da agenda continuam usando pesquisa paginada no servidor. Tratamentos com sessões livres aparecem primeiro, em ordem decrescente de disponibilidade; os sem sessões livres permanecem visíveis com um destaque **0 sessões disponíveis**. Disponibilidade significa sessões não realizadas e não reservadas em outro atendimento; na edição, a sessão do próprio atendimento é considerada disponível.
+
+O agendamento possui uma **Data** e os campos de hora **Início** e **Fim**, acompanhados da duração calculada. O botão **Usar duração sugerida: 60 min**, por exemplo, define o fim como início + 60 minutos. Alterar um tratamento ou o início não sobrescreve o fim manualmente; é preciso aplicar a sugestão. O servidor calcula os instantes a partir desses campos no fuso da clínica, com validação de início/fim no mesmo dia.
+
+Verificação opcional em Chromium, com banco isolado e sem dados de demonstração na aplicação:
+
+```powershell
+python -m pip install playwright
+python -m playwright install chromium
+python manage.py test tools.verify_agenda_ui --settings=config.test_settings
+```
+
+Esse fluxo cobre desktop e celular, rolagem com referências fixas, clique com preenchimento automático, busca por teclado, criação sem tratamento, edição com duração manual, cancelamento e cadastro de piso. Também verifica bloqueio recorrente, arrastar/soltar com mouse e toque, rejeição de um destino bloqueado, pesquisa em seletores comuns e dinâmicos, destaque de tratamentos sem sessões e sugestão de 60 minutos. Capturas de tela são gravadas na pasta temporária do sistema.
 
 ## Confirmação de e-mail
 

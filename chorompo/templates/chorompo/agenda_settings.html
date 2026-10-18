@@ -1,0 +1,16 @@
+{% extends 'chorompo/base.html' %}
+{% block title %}Salas e disponibilidade | Chorompo{% endblock %}
+{% block content %}
+<a class="back-link" href="{% url 'chorompo:appointments' %}">← Voltar à agenda</a>
+<section class="page-heading"><span class="eyebrow">CONFIGURAÇÕES DA AGENDA</span><h1>Salas e disponibilidade</h1><p>Organize os espaços e seus horários. Desativar um piso ou sala mantém os atendimentos no histórico.</p></section>
+<div class="agenda-settings-grid">
+<section class="form-card"><div class="section-title"><h2>Pisos</h2><a class="secondary-button" href="{% url 'chorompo:agenda_setting_create' 'piso' %}" data-modal-edit>+ Piso</a></div>
+{% for floor in floors %}<div class="setting-row"><div><strong>{{ floor.name }}</strong><small>{% if floor.is_active %}Ativo{% else %}Inativo{% endif %}</small></div><a href="{% url 'chorompo:agenda_setting_edit' 'piso' floor.pk %}" data-modal-edit aria-label="Editar piso {{ floor.name }}">Editar</a></div>{% empty %}<p class="info-note">Comece cadastrando um piso. Depois, adicione suas salas.</p>{% endfor %}</section>
+<section class="form-card"><div class="section-title"><h2>Salas</h2><a class="secondary-button" href="{% url 'chorompo:agenda_setting_create' 'sala' %}" data-modal-edit>+ Sala</a></div>
+{% for room in rooms %}<div class="setting-row"><div><strong><span class="room-dot" style="background: {{ room.color }}"></span>{{ room.name }}</strong><small>{{ room.floor.name }} · {{ room.opens_at|time:'H:i' }}–{{ room.closes_at|time:'H:i' }} · {% if room.is_active and room.floor.is_active %}Ativa{% else %}Inativa{% endif %}</small></div><a href="{% url 'chorompo:agenda_setting_edit' 'sala' room.pk %}" data-modal-edit aria-label="Editar sala {{ room.name }}">Editar</a></div>{% empty %}<p class="info-note">Cada sala pertence a um piso e tem seu próprio horário de funcionamento diário.</p>{% endfor %}</section>
+</div>
+<section class="form-card availability-settings"><div class="section-title"><div><h2>Bloqueios e ausências</h2><p class="help-text">Para almoço, manutenção, feriados ou períodos sem atendimento. Desmarque “Bloqueio ativo” para liberar o horário.</p></div><a class="secondary-button" href="{% url 'chorompo:agenda_setting_create' 'bloqueio' %}" data-modal-edit>+ Bloqueio</a></div>
+<div class="table-scroll"><table><thead><tr><th>Sala</th><th>Período e repetição</th><th>Motivo</th><th>Situação</th><th>Ação</th></tr></thead><tbody>{% for block in blocks %}<tr><td>{{ block.room }}</td><td>{% if block.recurrence == 'ONCE' %}{{ block.starts_at|date:'d/m/Y H:i' }}<br>até {{ block.ends_at|date:'d/m/Y H:i' }}{% else %}<strong>{{ block.repetition_label }} · {{ block.starts_at|date:'H:i' }}–{{ block.ends_at|date:'H:i' }}</strong><br>A partir de {{ block.starts_at|date:'d/m/Y' }}{% if block.repeat_until %} até {{ block.repeat_until|date:'d/m/Y' }}{% else %} · sem data final{% endif %}{% endif %}</td><td>{{ block.reason }}</td><td>{% if block.is_active %}Bloqueado{% else %}Liberado{% endif %}</td><td><a href="{% url 'chorompo:agenda_setting_edit' 'bloqueio' block.pk %}" data-modal-edit aria-label="Editar bloqueio {{ block.reason }}">Editar</a></td></tr>{% empty %}<tr><td colspan="5">Nenhum bloqueio registrado.</td></tr>{% endfor %}</tbody></table></div>
+{% include 'chorompo/includes/pagination.html' %}
+</section>
+{% endblock %}

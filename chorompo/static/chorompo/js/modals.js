@@ -8,7 +8,7 @@
     let controller;
     remote.addEventListener('close', () => controller?.abort());
     function focusField(dialog) {
-        dialog.querySelector('[aria-invalid="true"], input:not([type="hidden"]):not([disabled]), select, textarea')?.focus();
+        (dialog.querySelector('[aria-invalid="true"]:not([hidden])') || dialog.querySelector('[data-patient-search]') || dialog.querySelector('input:not([type="hidden"]):not([disabled]), select:not([hidden]), textarea'))?.focus();
     }
     function displayEditor(html) {
         const page = new DOMParser().parseFromString(html, 'text/html');
@@ -24,6 +24,7 @@
         });
         remote.querySelector('h2').textContent = editor.dataset.title;
         remote.querySelector('.modal-body').replaceChildren(form);
+        form.dispatchEvent(new CustomEvent('record:loaded', {bubbles: true}));
         return true;
     }
     document.addEventListener('click', async event => {
